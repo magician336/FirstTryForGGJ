@@ -1,19 +1,25 @@
 using UnityEngine;
 
-// 强制要求物体上有 Rigidbody2D，防止你忘记加
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
 {
     [Header("移动设置")]
     public float moveSpeed = 5f;
+    public float jumpForce = 10f;
+
+    [Header("地面检测")]
+    public Transform groundCheck;
+    public float groundCheckRadius = 0.2f;
+    public LayerMask groundLayer;
 
     [Header("交互设置")]
-    public KeyCode interactKey = KeyCode.E; // 按 E 交互
-    public float interactRange = 1.5f;      // 交互范围
-    public LayerMask interactLayer;         // 只有这一层的物体能被交互
+    public KeyCode interactKey = KeyCode.E;
+    public float interactRange = 1.5f;
+    public LayerMask interactLayer;
 
     private Rigidbody2D rb;
-    private Vector2 movement;
+    private float horizontalInput;
+    private bool isGrounded;
 
     void Awake()
     {
@@ -22,39 +28,62 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // 1. 获取输入 (WASD 或 方向键)
-        movement.x = Input.GetAxisRaw("Horizontal");
-        movement.y = Input.GetAxisRaw("Vertical");
+        // 1. 获取水平输入
+        horizontalInput = Input.GetAxisRaw("Horizontal");
 
-        // 2. 检测交互输入
+        // 2. 地面检测（修改部分：检测落地瞬间）
+        if (groundCheck != null)
+        {
+            // A. 先把现在的状态存为“旧状态”
+            bool wasGrounded = isGrounded;
+
+            // B. 获取最新的状态
+            isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+
+            // C. 如果“之前没在地面”且“现在在地面”，说明刚刚落地
+            if (!wasGrounded && isGrounded)
+            {
+                rb.velocity = Vector2.zero; // 速度清零
+                // Debug.Log("落地！速度已重置"); // 可选：调试用
+            }
+        }
+
+        // 3. 跳跃输入
+        if (Input.GetButtonDown("Jump") && isGrounded)
+        {
+            Jump();
+        }
+
+        // 4. 交互输入
         if (Input.GetKeyDown(interactKey))
         {
             TryInteract();
         }
 
-        // 3. 处理角色朝向翻转 (视觉优化)
-        if (movement.x != 0)
+        // 5. 角色翻转
+        if (horizontalInput != 0)
         {
-            // 如果向左走(x<0)，Scale设为-1；向右走(x>0)，Scale设为1
-            transform.localScale = new Vector3(Mathf.Sign(movement.x), 1, 1);
+            transform.localScale = new Vector3(Mathf.Sign(horizontalInput), 1, 1);
         }
     }
 
     void FixedUpdate()
     {
-        // 4. 物理移动 (推荐在 FixedUpdate 中移动刚体)
-        rb.MovePosition(rb.position + movement.normalized * moveSpeed * Time.fixedDeltaTime);
+        // 6. 物理移动
+        rb.velocity = new Vector2(horizontalInput * moveSpeed, rb.velocity.y);
     }
 
-    // 尝试触发附近的 Interactable
+    void Jump()
+    {
+        rb.velocity = new Vector2(rb.velocity.x, 0);
+        rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+    }
+
     void TryInteract()
     {
-        // 在角色周围画一个圆圈，看看有没有碰到 "Interactable" 层的东西
         Collider2D hit = Physics2D.OverlapCircle(transform.position, interactRange, interactLayer);
-
         if (hit != null)
         {
-            // 如果碰到了，尝试获取上面的 Interactable 脚本
             Interactable target = hit.GetComponent<Interactable>();
             if (target != null)
             {
@@ -63,10 +92,15 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // 在编辑器里画出交互范围（方便调试）
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, interactRange);
+
+        if (groundCheck != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        }
     }
 }
