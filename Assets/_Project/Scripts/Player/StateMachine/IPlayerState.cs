@@ -4,4 +4,6 @@ public interface IPlayerState
     void HandleInput();
     void LogicUpdate();
     void Exit();
+
+    PlayerStates GetState();
 }

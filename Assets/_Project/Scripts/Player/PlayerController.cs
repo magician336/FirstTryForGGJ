@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -125,6 +126,7 @@ public class PlayerController : MonoBehaviour
         if (movementController != null && groundChecker != null)
         {
             movementController.SetGrounded(groundChecker.IsGrounded);
+            if (groundChecker.IsGrounded) Debug.Log("已经踩在地面上了");
         }
     }
 
@@ -135,7 +137,8 @@ public class PlayerController : MonoBehaviour
 
     public void QueueJumpInput()
     {
-        jumpRequested = true;
+        if (stateMachine.CurrentState.GetState() == PlayerStates.Idle || stateMachine.CurrentState.GetState() == PlayerStates.Run)
+            jumpRequested = true;
     }
 
     public void QueueInteractInput()

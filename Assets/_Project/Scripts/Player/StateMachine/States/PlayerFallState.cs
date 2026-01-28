@@ -25,7 +25,8 @@ public class PlayerFallState : IPlayerState
     {
         player.Move(player.HorizontalInput);
 
-        if (player.IsGrounded)
+        // 增加垂直速度阈值判定（例如 -0.1f），防止角色刚开始跳跃或离开平台时产生错误的瞬间着陆
+        if (player.IsGrounded && player.VerticalVelocity <= 0.01f)
         {
             if (Mathf.Abs(player.HorizontalInput) > 0.01f)
             {
@@ -40,5 +41,10 @@ public class PlayerFallState : IPlayerState
 
     public void Exit()
     {
+    }
+
+    public PlayerStates GetState()
+    {
+        return PlayerStates.Fall;
     }
 }

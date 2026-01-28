@@ -46,4 +46,9 @@ public class PlayerRunState : IPlayerState
     public void Exit()
     {
     }
+
+    public PlayerStates GetState()
+    {
+        return PlayerStates.Run;
+    }
 }

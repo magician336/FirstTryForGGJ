@@ -52,4 +52,9 @@ public class PlayerInteractState : IPlayerState
     public void Exit()
     {
     }
+
+    public PlayerStates GetState()
+    {
+        return PlayerStates.Interact;
+    }
 }

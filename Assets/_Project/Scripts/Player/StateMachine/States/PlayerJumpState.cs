@@ -35,4 +35,9 @@ public class PlayerJumpState : IPlayerState
     public void Exit()
     {
     }
+
+    public PlayerStates GetState()
+    {
+        return PlayerStates.Jump;
+    }
 }

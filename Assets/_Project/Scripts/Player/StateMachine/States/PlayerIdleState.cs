@@ -47,4 +47,9 @@ public class PlayerIdleState : IPlayerState
     public void Exit()
     {
     }
+
+    public PlayerStates GetState()
+    {
+        return PlayerStates.Idle;
+    }
 }
