@@ -1,0 +1,50 @@
+using UnityEngine;
+
+public class PlayerIdleState : IPlayerState
+{
+    private readonly PlayerController player;
+
+    public PlayerIdleState(PlayerController player)
+    {
+        this.player = player;
+    }
+
+    public void Enter()
+    {
+        player.Move(0f);
+    }
+
+    public void HandleInput()
+    {
+        if (player.IsGrounded && player.ConsumeJumpInput())
+        {
+            player.ChangeState(player.JumpState);
+            return;
+        }
+
+        if (player.ConsumeInteractInput())
+        {
+            player.ChangeState(player.InteractState);
+            return;
+        }
+
+        if (Mathf.Abs(player.HorizontalInput) > 0.01f)
+        {
+            player.ChangeState(player.RunState);
+        }
+    }
+
+    public void LogicUpdate()
+    {
+        player.Move(0f);
+
+        if (!player.IsGrounded && player.VerticalVelocity < 0f)
+        {
+            player.ChangeState(player.FallState);
+        }
+    }
+
+    public void Exit()
+    {
+    }
+}

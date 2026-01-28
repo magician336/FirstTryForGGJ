@@ -3,104 +3,201 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
 {
-    [Header("移动设置")]
-    public float moveSpeed = 5f;
-    public float jumpForce = 10f;
+    [Header("组件")]
+    [SerializeField] private MovementController movementController;
+    [SerializeField] private GroundChecker groundChecker;
+    [SerializeField] private InteractionController interactionController;
+    [SerializeField] private PlayerSettings playerSettings;
 
-    [Header("地面检测")]
-    public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
-    public LayerMask groundLayer;
+    private PlayerStateMachine stateMachine;
+    private Rigidbody2D body;
+    private PlayerInputHandler cachedInputHandler;
 
-    [Header("交互设置")]
-    public KeyCode interactKey = KeyCode.E;
-    public float interactRange = 1.5f;
-    public LayerMask interactLayer;
+    private PlayerIdleState idleState;
+    private PlayerRunState runState;
+    private PlayerJumpState jumpState;
+    private PlayerFallState fallState;
+    private PlayerInteractState interactState;
 
-    private Rigidbody2D rb;
-    private float horizontalInput;
-    private bool isGrounded;
+    private float movementInput;
+    private bool jumpRequested;
+    private bool interactRequested;
 
     void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
+        body = GetComponent<Rigidbody2D>();
+        cachedInputHandler = GetComponent<PlayerInputHandler>();
+
+        if (movementController == null)
+        {
+            movementController = GetComponent<MovementController>();
+        }
+
+        if (groundChecker == null)
+        {
+            groundChecker = GetComponentInChildren<GroundChecker>();
+        }
+
+        if (interactionController == null)
+        {
+            interactionController = GetComponent<InteractionController>();
+        }
+
+        ApplySettings();
+
+        stateMachine = new PlayerStateMachine();
+        InitializeStates();
     }
 
     void Update()
     {
-        // 1. 获取水平输入
-        horizontalInput = Input.GetAxisRaw("Horizontal");
+        CaptureFallbackInput();
+        UpdateGroundState();
 
-        // 2. 地面检测（修改部分：检测落地瞬间）
-        if (groundCheck != null)
+        if (stateMachine?.CurrentState == null)
         {
-            // A. 先把现在的状态存为“旧状态”
-            bool wasGrounded = isGrounded;
-
-            // B. 获取最新的状态
-            isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-
-            // C. 如果“之前没在地面”且“现在在地面”，说明刚刚落地
-            if (!wasGrounded && isGrounded)
-            {
-                rb.velocity = Vector2.zero; // 速度清零
-                // Debug.Log("落地！速度已重置"); // 可选：调试用
-            }
+            return;
         }
 
-        // 3. 跳跃输入
-        if (Input.GetButtonDown("Jump") && isGrounded)
+        stateMachine.CurrentState.HandleInput();
+        stateMachine.CurrentState.LogicUpdate();
+    }
+
+    private void ApplySettings()
+    {
+        if (playerSettings == null)
         {
-            Jump();
+            return;
         }
 
-        // 4. 交互输入
+        if (movementController != null)
+        {
+            movementController.moveSpeed = playerSettings.moveSpeed;
+            movementController.jumpForce = playerSettings.jumpForce;
+        }
+
+        if (interactionController != null)
+        {
+            interactionController.interactKey = playerSettings.interactKey;
+            interactionController.interactRange = playerSettings.interactRange;
+        }
+
+        if (cachedInputHandler != null)
+        {
+            cachedInputHandler.interactKey = playerSettings.interactKey;
+        }
+    }
+
+    private void InitializeStates()
+    {
+        idleState = new PlayerIdleState(this);
+        runState = new PlayerRunState(this);
+        jumpState = new PlayerJumpState(this);
+        fallState = new PlayerFallState(this);
+        interactState = new PlayerInteractState(this);
+
+        stateMachine.Initialize(idleState);
+    }
+
+    private void CaptureFallbackInput()
+    {
+        if (cachedInputHandler != null && cachedInputHandler.isActiveAndEnabled)
+        {
+            return;
+        }
+
+        SetMovementInput(Input.GetAxisRaw("Horizontal"));
+
+        if (Input.GetButtonDown("Jump"))
+        {
+            QueueJumpInput();
+        }
+
+        KeyCode interactKey = playerSettings != null ? playerSettings.interactKey : KeyCode.E;
         if (Input.GetKeyDown(interactKey))
         {
-            TryInteract();
+            QueueInteractInput();
         }
+    }
 
-        // 5. 角色翻转
-        if (horizontalInput != 0)
+    private void UpdateGroundState()
+    {
+        if (movementController != null && groundChecker != null)
         {
-            transform.localScale = new Vector3(Mathf.Sign(horizontalInput), 1, 1);
+            movementController.SetGrounded(groundChecker.IsGrounded);
         }
     }
 
-    void FixedUpdate()
+    public void SetMovementInput(float value)
     {
-        // 6. 物理移动
-        rb.velocity = new Vector2(horizontalInput * moveSpeed, rb.velocity.y);
+        movementInput = Mathf.Clamp(value, -1f, 1f);
     }
 
-    void Jump()
+    public void QueueJumpInput()
     {
-        rb.velocity = new Vector2(rb.velocity.x, 0);
-        rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+        jumpRequested = true;
     }
 
-    void TryInteract()
+    public void QueueInteractInput()
     {
-        Collider2D hit = Physics2D.OverlapCircle(transform.position, interactRange, interactLayer);
-        if (hit != null)
+        interactRequested = true;
+    }
+
+    // Backwards compatibility for existing callers
+    public void TryJump() => QueueJumpInput();
+    public void TryInteract() => QueueInteractInput();
+
+    public float HorizontalInput => movementInput;
+
+    public bool ConsumeJumpInput()
+    {
+        if (!jumpRequested)
         {
-            Interactable target = hit.GetComponent<Interactable>();
-            if (target != null)
-            {
-                target.TriggerInteract();
-            }
+            return false;
         }
+
+        jumpRequested = false;
+        return true;
     }
 
-    void OnDrawGizmosSelected()
+    public bool ConsumeInteractInput()
     {
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, interactRange);
-
-        if (groundCheck != null)
+        if (!interactRequested)
         {
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+            return false;
         }
+
+        interactRequested = false;
+        return true;
     }
+
+    public bool IsGrounded => groundChecker != null && groundChecker.IsGrounded;
+
+    public float VerticalVelocity => body != null ? body.velocity.y : 0f;
+
+    public void Move(float normalizedInput)
+    {
+        movementController?.Move(normalizedInput);
+    }
+
+    public void ExecuteJump()
+    {
+        movementController?.Jump();
+    }
+
+    public bool PerformInteraction()
+    {
+        return interactionController != null && interactionController.TryInteract();
+    }
+
+    public void ChangeState(IPlayerState newState)
+    {
+        stateMachine?.ChangeState(newState);
+    }
+
+    public IPlayerState IdleState => idleState;
+    public IPlayerState RunState => runState;
+    public IPlayerState JumpState => jumpState;
+    public IPlayerState FallState => fallState;
+    public IPlayerState InteractState => interactState;
 }
