@@ -1,1 +1,1 @@
-public enum PlayerStates { Idle, Run, Jump, Interact, Fall };
+public enum PlayerStates { Idle, Run, Jump, Interact, Fall, Flight };

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -9,16 +10,23 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private GroundChecker groundChecker;
     [SerializeField] private InteractionController interactionController;
     [SerializeField] private PlayerSettings playerSettings;
+    [SerializeField] private PlayerFormType startingForm = PlayerFormType.Vanguard;
 
     private PlayerStateMachine stateMachine;
     private Rigidbody2D body;
     private PlayerInputHandler cachedInputHandler;
+    private float baseGravityScale = 1f;
 
-    private PlayerIdleState idleState;
-    private PlayerRunState runState;
-    private PlayerJumpState jumpState;
-    private PlayerFallState fallState;
-    private PlayerInteractState interactState;
+    private readonly Dictionary<PlayerFormType, PlayerFormStateBundle> formBundles = new();
+    private PlayerFormType currentFormType = PlayerFormType.Vanguard;
+    private PlayerFormStateFactory currentFormFactory;
+
+    private IPlayerState idleState;
+    private IPlayerState runState;
+    private IPlayerState jumpState;
+    private IPlayerState fallState;
+    private IPlayerState interactState;
+    private IPlayerState flightState;
 
     private float movementInput;
     private bool jumpRequested;
@@ -27,6 +35,7 @@ public class PlayerController : MonoBehaviour
     void Awake()
     {
         body = GetComponent<Rigidbody2D>();
+        baseGravityScale = body != null ? body.gravityScale : 1f;
         cachedInputHandler = GetComponent<PlayerInputHandler>();
 
         if (movementController == null)
@@ -47,7 +56,7 @@ public class PlayerController : MonoBehaviour
         ApplySettings();
 
         stateMachine = new PlayerStateMachine();
-        InitializeStates();
+        InitializeFormSystem();
     }
 
     void Update()
@@ -71,11 +80,8 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        if (movementController != null)
-        {
-            movementController.moveSpeed = playerSettings.moveSpeed;
-            movementController.jumpForce = playerSettings.jumpForce;
-        }
+        ApplyMovementProfile(1f, 1f);
+        ApplyGravityMultiplier(1f);
 
         if (interactionController != null)
         {
@@ -89,15 +95,66 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void InitializeStates()
+    private void InitializeFormSystem()
     {
-        idleState = new PlayerIdleState(this);
-        runState = new PlayerRunState(this);
-        jumpState = new PlayerJumpState(this);
-        fallState = new PlayerFallState(this);
-        interactState = new PlayerInteractState(this);
+        formBundles.Clear();
+        currentFormFactory = null;
+        SwitchForm(startingForm, true);
+    }
 
-        stateMachine.Initialize(idleState);
+    public void SwitchForm(PlayerFormType newForm)
+    {
+        SwitchForm(newForm, false);
+    }
+
+    public void SwitchForm(PlayerFormType newForm, bool force)
+    {
+        if (!force && currentFormType == newForm)
+        {
+            return;
+        }
+
+        var factory = PlayerFormFactoryRegistry.GetFactory(newForm);
+        if (factory == null)
+        {
+            Debug.LogError($"No PlayerFormStateFactory registered for form {newForm}");
+            return;
+        }
+
+        currentFormFactory = factory;
+        currentFormType = newForm;
+
+        currentFormFactory.ApplyFormSettings(this);
+
+        if (!formBundles.TryGetValue(newForm, out var bundle))
+        {
+            bundle = currentFormFactory.CreateStateBundle(this);
+            formBundles[newForm] = bundle;
+        }
+
+        BindStateBundle(bundle);
+
+        var desiredStateId = stateMachine.CurrentState?.GetState() ?? PlayerStates.Idle;
+        var targetState = bundle.GetStateOrDefault(desiredStateId) ?? bundle.DefaultState;
+
+        if (stateMachine.CurrentState == null)
+        {
+            stateMachine.Initialize(targetState);
+        }
+        else
+        {
+            stateMachine.ChangeState(targetState);
+        }
+    }
+
+    private void BindStateBundle(PlayerFormStateBundle bundle)
+    {
+        idleState = bundle.GetStateOrDefault(PlayerStates.Idle);
+        runState = bundle.GetStateOrDefault(PlayerStates.Run);
+        jumpState = bundle.GetStateOrDefault(PlayerStates.Jump);
+        fallState = bundle.GetStateOrDefault(PlayerStates.Fall);
+        interactState = bundle.GetStateOrDefault(PlayerStates.Interact);
+        flightState = bundle.GetStateOrDefault(PlayerStates.Flight);
     }
 
     private void CaptureFallbackInput()
@@ -126,7 +183,6 @@ public class PlayerController : MonoBehaviour
         if (movementController != null && groundChecker != null)
         {
             movementController.SetGrounded(groundChecker.IsGrounded);
-            if (groundChecker.IsGrounded) Debug.Log("已经踩在地面上了");
         }
     }
 
@@ -137,8 +193,13 @@ public class PlayerController : MonoBehaviour
 
     public void QueueJumpInput()
     {
-        if (stateMachine.CurrentState.GetState() == PlayerStates.Idle || stateMachine.CurrentState.GetState() == PlayerStates.Run)
+        // 将“跳跃”改为“切换至飞行形态（Cry）”，同时触发一次跳跃输入
+        var currentStateId = stateMachine?.CurrentState?.GetState();
+        if (currentStateId == PlayerStates.Idle || currentStateId == PlayerStates.Run)
+        {
+            SwitchForm(PlayerFormType.Cry);
             jumpRequested = true;
+        }
     }
 
     public void QueueInteractInput()
@@ -198,9 +259,33 @@ public class PlayerController : MonoBehaviour
         stateMachine?.ChangeState(newState);
     }
 
+    public PlayerFormType CurrentForm => currentFormType;
+
+    public void ApplyMovementProfile(float moveMultiplier, float jumpMultiplier)
+    {
+        if (movementController == null || playerSettings == null)
+        {
+            return;
+        }
+
+        movementController.moveSpeed = playerSettings.moveSpeed * Mathf.Max(0.1f, moveMultiplier);
+        movementController.jumpForce = playerSettings.jumpForce * Mathf.Max(0.1f, jumpMultiplier);
+    }
+
+    public void ApplyGravityMultiplier(float gravityMultiplier)
+    {
+        if (body == null)
+        {
+            return;
+        }
+
+        body.gravityScale = baseGravityScale * Mathf.Max(0f, gravityMultiplier);
+    }
+
     public IPlayerState IdleState => idleState;
     public IPlayerState RunState => runState;
     public IPlayerState JumpState => jumpState;
     public IPlayerState FallState => fallState;
     public IPlayerState InteractState => interactState;
+    public IPlayerState FlightState => flightState;
 }

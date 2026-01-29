@@ -1,0 +1,6 @@
+using Unity;
+
+class ToCryInteractable
+{
+
+}
