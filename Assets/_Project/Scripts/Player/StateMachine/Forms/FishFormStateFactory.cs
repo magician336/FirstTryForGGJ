@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
-using UnityEngine;
-public class VanguardFormStateFactory : PlayerFormStateFactory
+
+public class FishFormStateFactory : PlayerFormStateFactory
 {
-    public override PlayerFormType FormType => PlayerFormType.Vanguard;
+    public override PlayerFormType FormType => PlayerFormType.Fish;
 
     public override PlayerFormStateBundle CreateStateBundle(PlayerController controller)
     {
@@ -14,8 +13,5 @@ public class VanguardFormStateFactory : PlayerFormStateFactory
     public override void ApplyFormSettings(PlayerController controller)
     {
         base.ApplyFormSettings(controller);
-        controller?.ApplyMovementProfile(1f, 1f);
-        controller?.ApplyGravityMultiplier(1f);
-        Debug.Log("切换Van形态");
     }
 }

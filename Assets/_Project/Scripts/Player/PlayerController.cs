@@ -10,7 +10,11 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private GroundChecker groundChecker;
     [SerializeField] private InteractionController interactionController;
     [SerializeField] private PlayerSettings playerSettings;
-    [SerializeField] private PlayerFormType startingForm = PlayerFormType.Vanguard;
+    [SerializeField] private PlayerFormType startingForm = PlayerFormType.NormalHead;
+    [Header("Super Jump Settings")]
+    [SerializeField] private float superJumpMinMultiplier = 1f;
+    [SerializeField] private float superJumpMaxMultiplier = 2.5f;
+    [SerializeField] private float superJumpMaxChargeTime = 1.5f;
 
     private PlayerStateMachine stateMachine;
     private Rigidbody2D body;
@@ -18,7 +22,7 @@ public class PlayerController : MonoBehaviour
     private float baseGravityScale = 1f;
 
     private readonly Dictionary<PlayerFormType, PlayerFormStateBundle> formBundles = new();
-    private PlayerFormType currentFormType = PlayerFormType.Vanguard;
+    private PlayerFormType currentFormType = PlayerFormType.NormalHead;
     private PlayerFormStateFactory currentFormFactory;
 
     private IPlayerState idleState;
@@ -26,11 +30,15 @@ public class PlayerController : MonoBehaviour
     private IPlayerState jumpState;
     private IPlayerState fallState;
     private IPlayerState interactState;
-    private IPlayerState flightState;
+    private IPlayerState superJumpState;
 
     private float movementInput;
     private bool jumpRequested;
     private bool interactRequested;
+    private bool isChargingSuperJump;
+    private float superJumpChargeTimer;
+    private bool hasPendingSuperJump;
+    private float pendingSuperJumpMultiplier;
 
     void Awake()
     {
@@ -54,6 +62,7 @@ public class PlayerController : MonoBehaviour
         }
 
         ApplySettings();
+        pendingSuperJumpMultiplier = superJumpMinMultiplier;
 
         stateMachine = new PlayerStateMachine();
         InitializeFormSystem();
@@ -80,18 +89,21 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        ApplyMovementProfile(1f, 1f);
-        ApplyGravityMultiplier(1f);
+        ApplyFormSettings(currentFormType);
 
-        if (interactionController != null)
+        var interactionSettings = playerSettings.interactionSettings;
+        if (interactionSettings != null)
         {
-            interactionController.interactKey = playerSettings.interactKey;
-            interactionController.interactRange = playerSettings.interactRange;
-        }
+            if (interactionController != null)
+            {
+                interactionController.interactKey = interactionSettings.interactKey;
+                interactionController.interactRange = interactionSettings.interactRange;
+            }
 
-        if (cachedInputHandler != null)
-        {
-            cachedInputHandler.interactKey = playerSettings.interactKey;
+            if (cachedInputHandler != null)
+            {
+                cachedInputHandler.interactKey = interactionSettings.interactKey;
+            }
         }
     }
 
@@ -124,6 +136,11 @@ public class PlayerController : MonoBehaviour
         currentFormFactory = factory;
         currentFormType = newForm;
 
+        if (newForm != PlayerFormType.SuperJump)
+        {
+            ClearSuperJumpData();
+        }
+
         currentFormFactory.ApplyFormSettings(this);
 
         if (!formBundles.TryGetValue(newForm, out var bundle))
@@ -154,7 +171,7 @@ public class PlayerController : MonoBehaviour
         jumpState = bundle.GetStateOrDefault(PlayerStates.Jump);
         fallState = bundle.GetStateOrDefault(PlayerStates.Fall);
         interactState = bundle.GetStateOrDefault(PlayerStates.Interact);
-        flightState = bundle.GetStateOrDefault(PlayerStates.Flight);
+        superJumpState = bundle.GetStateOrDefault(PlayerStates.SuperJump);
     }
 
     private void CaptureFallbackInput()
@@ -168,10 +185,22 @@ public class PlayerController : MonoBehaviour
 
         if (Input.GetButtonDown("Jump"))
         {
-            QueueJumpInput();
+            OnJumpButtonDown();
         }
 
-        KeyCode interactKey = playerSettings != null ? playerSettings.interactKey : KeyCode.E;
+        if (Input.GetButton("Jump"))
+        {
+            OnJumpButtonHeld(Time.deltaTime);
+        }
+
+        if (Input.GetButtonUp("Jump"))
+        {
+            OnJumpButtonUp();
+        }
+
+        KeyCode interactKey = playerSettings != null && playerSettings.interactionSettings != null
+            ? playerSettings.interactionSettings.interactKey
+            : KeyCode.E;
         if (Input.GetKeyDown(interactKey))
         {
             QueueInteractInput();
@@ -203,6 +232,33 @@ public class PlayerController : MonoBehaviour
     public void QueueInteractInput()
     {
         interactRequested = true;
+    }
+
+    public void OnJumpButtonDown()
+    {
+        if (IsSuperJumpFormActive())
+        {
+            BeginSuperJumpCharge();
+            return;
+        }
+
+        QueueJumpInput();
+    }
+
+    public void OnJumpButtonHeld(float deltaTime)
+    {
+        if (IsSuperJumpFormActive())
+        {
+            ChargeSuperJump(deltaTime);
+        }
+    }
+
+    public void OnJumpButtonUp()
+    {
+        if (IsSuperJumpFormActive())
+        {
+            ReleaseSuperJumpCharge();
+        }
     }
 
     // Backwards compatibility for existing callers
@@ -242,9 +298,9 @@ public class PlayerController : MonoBehaviour
         movementController?.Move(normalizedInput);
     }
 
-    public void ExecuteJump()
+    public void ExecuteJump(float forceMultiplier = 1f)
     {
-        movementController?.Jump();
+        movementController?.Jump(forceMultiplier);
     }
 
     public bool PerformInteraction()
@@ -266,8 +322,14 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        movementController.moveSpeed = playerSettings.moveSpeed * Mathf.Max(0.1f, moveMultiplier);
-        movementController.jumpForce = playerSettings.jumpForce * Mathf.Max(0.1f, jumpMultiplier);
+        var formSettings = playerSettings.GetFormSettings(currentFormType);
+        if (formSettings == null)
+        {
+            return;
+        }
+
+        movementController.moveSpeed = formSettings.moveSpeed * Mathf.Max(0.1f, moveMultiplier);
+        movementController.jumpForce = formSettings.jumpForce * Mathf.Max(0.1f, jumpMultiplier);
     }
 
     public void ApplyGravityMultiplier(float gravityMultiplier)
@@ -280,10 +342,134 @@ public class PlayerController : MonoBehaviour
         body.gravityScale = baseGravityScale * Mathf.Max(0f, gravityMultiplier);
     }
 
+    public void ApplyFormSettings(PlayerFormType formType)
+    {
+        if (playerSettings == null)
+        {
+            return;
+        }
+
+        var formSettings = playerSettings.GetFormSettings(formType);
+        if (formSettings == null || movementController == null)
+        {
+            return;
+        }
+
+        movementController.moveSpeed = formSettings.moveSpeed;
+        movementController.jumpForce = formSettings.jumpForce;
+        ApplyGravityMultiplier(formSettings.gravityMultiplier);
+    }
+
+    private bool IsSuperJumpFormActive()
+    {
+        return currentFormType == PlayerFormType.SuperJump && superJumpState != null;
+    }
+
+    private bool IsInGroundedLocomotionState()
+    {
+        var stateId = stateMachine?.CurrentState?.GetState();
+        return stateId == PlayerStates.Idle || stateId == PlayerStates.Run;
+    }
+
+    private void BeginSuperJumpCharge()
+    {
+        if (isChargingSuperJump || !IsGrounded || !IsInGroundedLocomotionState())
+        {
+            return;
+        }
+
+        isChargingSuperJump = true;
+        superJumpChargeTimer = 0f;
+        pendingSuperJumpMultiplier = superJumpMinMultiplier;
+    }
+
+    private void ChargeSuperJump(float deltaTime)
+    {
+        if (!isChargingSuperJump)
+        {
+            return;
+        }
+
+        if (!IsGrounded || !IsInGroundedLocomotionState())
+        {
+            CancelSuperJumpCharge();
+            return;
+        }
+
+        superJumpChargeTimer += Mathf.Max(0f, deltaTime);
+        superJumpChargeTimer = Mathf.Min(superJumpChargeTimer, superJumpMaxChargeTime);
+        pendingSuperJumpMultiplier = CalculateSuperJumpMultiplier();
+    }
+
+    private void ReleaseSuperJumpCharge()
+    {
+        if (!isChargingSuperJump)
+        {
+            return;
+        }
+
+        isChargingSuperJump = false;
+
+        if (!IsGrounded || superJumpState == null || !IsInGroundedLocomotionState())
+        {
+            CancelSuperJumpCharge();
+            return;
+        }
+
+        hasPendingSuperJump = true;
+        pendingSuperJumpMultiplier = CalculateSuperJumpMultiplier();
+        stateMachine?.ChangeState(superJumpState);
+        ResetSuperJumpCharge();
+    }
+
+    private void CancelSuperJumpCharge()
+    {
+        isChargingSuperJump = false;
+        ResetSuperJumpCharge();
+    }
+
+    private void ResetSuperJumpCharge()
+    {
+        superJumpChargeTimer = 0f;
+        pendingSuperJumpMultiplier = superJumpMinMultiplier;
+    }
+
+    private void ClearSuperJumpData()
+    {
+        isChargingSuperJump = false;
+        hasPendingSuperJump = false;
+        ResetSuperJumpCharge();
+    }
+
+    private float CalculateSuperJumpMultiplier()
+    {
+        if (superJumpMaxChargeTime <= 0f)
+        {
+            return superJumpMaxMultiplier;
+        }
+
+        var normalized = Mathf.Clamp01(superJumpChargeTimer / superJumpMaxChargeTime);
+        return Mathf.Lerp(superJumpMinMultiplier, superJumpMaxMultiplier, normalized);
+    }
+
+    public bool TryConsumeSuperJumpCharge(out float multiplier)
+    {
+        if (!hasPendingSuperJump)
+        {
+            multiplier = superJumpMinMultiplier;
+            return false;
+        }
+
+        hasPendingSuperJump = false;
+        multiplier = Mathf.Max(0.1f, pendingSuperJumpMultiplier);
+        pendingSuperJumpMultiplier = superJumpMinMultiplier;
+        return true;
+    }
+
     public IPlayerState IdleState => idleState;
     public IPlayerState RunState => runState;
     public IPlayerState JumpState => jumpState;
     public IPlayerState FallState => fallState;
     public IPlayerState InteractState => interactState;
-    public IPlayerState FlightState => flightState;
+    public IPlayerState SuperJumpState => superJumpState;
 }

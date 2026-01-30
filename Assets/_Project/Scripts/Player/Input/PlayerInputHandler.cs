@@ -25,7 +25,17 @@ public class PlayerInputHandler : MonoBehaviour
 
         if (Input.GetKeyDown(jumpKey))
         {
-            playerController.QueueJumpInput();
+            playerController.OnJumpButtonDown();
+        }
+
+        if (Input.GetKey(jumpKey))
+        {
+            playerController.OnJumpButtonHeld(Time.deltaTime);
+        }
+
+        if (Input.GetKeyUp(jumpKey))
+        {
+            playerController.OnJumpButtonUp();
         }
 
         if (Input.GetKeyDown(interactKey))

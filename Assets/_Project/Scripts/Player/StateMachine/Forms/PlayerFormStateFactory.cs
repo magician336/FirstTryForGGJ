@@ -8,8 +8,7 @@ public abstract class PlayerFormStateFactory
 
     public virtual void ApplyFormSettings(PlayerController controller)
     {
-        controller?.ApplyMovementProfile(1f, 1f);
-        controller?.ApplyGravityMultiplier(1f);
+        controller?.ApplyFormSettings(FormType);
     }
 
     protected static Dictionary<PlayerStates, IPlayerState> BuildDefaultStateMap(PlayerController controller)
@@ -35,9 +34,9 @@ public static class PlayerFormFactoryRegistry
         {
             factory = formType switch
             {
-                PlayerFormType.Vanguard => new VanguardFormStateFactory(),
-                PlayerFormType.Cry => new CryFormStateFactory(),
-                PlayerFormType.Sentinel => new SentinelFormStateFactory(),
+                PlayerFormType.NormalHead => new NormalHeadFormStateFactory(),
+                PlayerFormType.SuperJump => new SuperJumpFormStateFactory(),
+                PlayerFormType.Fish => new FishFormStateFactory(),
                 _ => null
             };
 

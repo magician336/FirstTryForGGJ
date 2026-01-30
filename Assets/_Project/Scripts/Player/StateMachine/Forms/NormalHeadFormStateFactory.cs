@@ -1,8 +1,9 @@
+using System;
 using System.Collections.Generic;
-
-public class SentinelFormStateFactory : PlayerFormStateFactory
+using UnityEngine;
+public class NormalHeadFormStateFactory : PlayerFormStateFactory
 {
-    public override PlayerFormType FormType => PlayerFormType.Sentinel;
+    public override PlayerFormType FormType => PlayerFormType.NormalHead;
 
     public override PlayerFormStateBundle CreateStateBundle(PlayerController controller)
     {
@@ -13,7 +14,6 @@ public class SentinelFormStateFactory : PlayerFormStateFactory
     public override void ApplyFormSettings(PlayerController controller)
     {
         base.ApplyFormSettings(controller);
-        controller?.ApplyMovementProfile(0.85f, 1.15f);
-        controller?.ApplyGravityMultiplier(1.2f);
+        Debug.Log("切换NormalHead形态");
     }
 }

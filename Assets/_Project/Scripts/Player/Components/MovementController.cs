@@ -20,12 +20,12 @@ public class MovementController : MonoBehaviour
         rb.velocity = new Vector2(horizontalInput * moveSpeed, rb.velocity.y);
     }
 
-    public void Jump()
+    public void Jump(float forceMultiplier = 1f)
     {
         if (isGrounded)
         {
             rb.velocity = new Vector2(rb.velocity.x, 0);
-            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            rb.AddForce(Vector2.up * (jumpForce * Mathf.Max(0.1f, forceMultiplier)), ForceMode2D.Impulse);
             isGrounded = false;
         }
     }
