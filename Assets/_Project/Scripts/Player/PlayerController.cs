@@ -193,11 +193,9 @@ public class PlayerController : MonoBehaviour
 
     public void QueueJumpInput()
     {
-        // 将“跳跃”改为“切换至飞行形态（Cry）”，同时触发一次跳跃输入
         var currentStateId = stateMachine?.CurrentState?.GetState();
         if (currentStateId == PlayerStates.Idle || currentStateId == PlayerStates.Run)
         {
-            SwitchForm(PlayerFormType.Cry);
             jumpRequested = true;
         }
     }

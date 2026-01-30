@@ -42,19 +42,19 @@ public class GameManager : MonoBehaviour
 
     private void OnEnable()
     {
-        SceneManager.sceneLoaded += HandleSceneLoaded;
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += HandleSceneLoaded;
     }
 
     private void OnDisable()
     {
-        SceneManager.sceneLoaded -= HandleSceneLoaded;
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= HandleSceneLoaded;
     }
 
     private void Start()
     {
         if (loadStartingSceneOnStart && !string.IsNullOrWhiteSpace(startingSceneName))
         {
-            SceneManager.LoadScene(startingSceneName);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(startingSceneName);
             return;
         }
 
@@ -139,16 +139,16 @@ public class GameManager : MonoBehaviour
 
     public void RestartLevel()
     {
-        var idx = SceneManager.GetActiveScene().buildIndex;
-        SceneManager.LoadScene(idx);
+        var idx = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex;
+        UnityEngine.SceneManagement.SceneManager.LoadScene(idx);
     }
 
     public void LoadNextLevel()
     {
-        var idx = SceneManager.GetActiveScene().buildIndex + 1;
-        if (idx < SceneManager.sceneCountInBuildSettings)
+        var idx = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex + 1;
+        if (idx < UnityEngine.SceneManagement.SceneManager.sceneCountInBuildSettings)
         {
-            SceneManager.LoadScene(idx);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(idx);
         }
     }
 
@@ -156,7 +156,7 @@ public class GameManager : MonoBehaviour
     {
         if (!string.IsNullOrWhiteSpace(sceneName))
         {
-            SceneManager.LoadScene(sceneName);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
         }
     }
 
