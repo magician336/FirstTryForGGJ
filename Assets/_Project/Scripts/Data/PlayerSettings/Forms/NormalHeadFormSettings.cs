@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "NormalHeadFormSettings", menuName = "Player/Settings/Form Settings")]
+[CreateAssetMenu(fileName = "NormalHeadFormSettings", menuName = "Player/Settings/NormalHeadFormSettings")]
 public class NormalHeadFormSettings : ScriptableObject
 {
     [Header("Movement")]
@@ -9,4 +9,7 @@ public class NormalHeadFormSettings : ScriptableObject
 
     [Header("Physics")]
     public float gravityMultiplier = 1f;
+
+    [Header("Presentation")]
+    public PlayerFormPresentation presentation;
 }

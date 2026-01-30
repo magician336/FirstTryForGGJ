@@ -1,12 +1,10 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "SuperJumpFormSettings", menuName = "Player/Settings/Form Settings")]
-public class SuperJumpFormSettings : ScriptableObject
+[CreateAssetMenu(fileName = "SuperJumpFormSettings", menuName = "Player/Settings/SuperJumpFormSettings")]
+public class SuperJumpFormSettings : NormalHeadFormSettings
 {
-    [Header("Movement")]
-    public float moveSpeed = 5f;
-    public float jumpForce = 10f;
-
-    [Header("Physics")]
-    public float gravityMultiplier = 1f;
+    [Header("Super Jump Charge")]
+    public float minChargeMultiplier = 1f;
+    public float maxChargeMultiplier = 2.5f;
+    public float maxChargeTime = 1.5f;
 }

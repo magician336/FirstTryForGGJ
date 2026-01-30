@@ -9,12 +9,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private MovementController movementController;
     [SerializeField] private GroundChecker groundChecker;
     [SerializeField] private InteractionController interactionController;
+    [SerializeField] private PlayerPresentationBinder presentationBinder;
     [SerializeField] private PlayerSettings playerSettings;
     [SerializeField] private PlayerFormType startingForm = PlayerFormType.NormalHead;
-    [Header("Super Jump Settings")]
-    [SerializeField] private float superJumpMinMultiplier = 1f;
-    [SerializeField] private float superJumpMaxMultiplier = 2.5f;
-    [SerializeField] private float superJumpMaxChargeTime = 1.5f;
 
     private PlayerStateMachine stateMachine;
     private Rigidbody2D body;
@@ -24,6 +21,8 @@ public class PlayerController : MonoBehaviour
     private readonly Dictionary<PlayerFormType, PlayerFormStateBundle> formBundles = new();
     private PlayerFormType currentFormType = PlayerFormType.NormalHead;
     private PlayerFormStateFactory currentFormFactory;
+    private SuperJumpFormSettings SuperJumpSettings => playerSettings != null ? playerSettings.superJumpForm : null;
+    private PlayerCombatSettings CombatSettings => playerSettings != null ? playerSettings.combatSettings : null;
 
     private IPlayerState idleState;
     private IPlayerState runState;
@@ -39,6 +38,7 @@ public class PlayerController : MonoBehaviour
     private float superJumpChargeTimer;
     private bool hasPendingSuperJump;
     private float pendingSuperJumpMultiplier;
+    private int currentHealth;
 
     void Awake()
     {
@@ -61,8 +61,14 @@ public class PlayerController : MonoBehaviour
             interactionController = GetComponent<InteractionController>();
         }
 
+        if (presentationBinder == null)
+        {
+            presentationBinder = GetComponentInChildren<PlayerPresentationBinder>();
+        }
+
         ApplySettings();
-        pendingSuperJumpMultiplier = superJumpMinMultiplier;
+        ResetSuperJumpCharge();
+        InitializeCombatStats();
 
         stateMachine = new PlayerStateMachine();
         InitializeFormSystem();
@@ -172,6 +178,8 @@ public class PlayerController : MonoBehaviour
         fallState = bundle.GetStateOrDefault(PlayerStates.Fall);
         interactState = bundle.GetStateOrDefault(PlayerStates.Interact);
         superJumpState = bundle.GetStateOrDefault(PlayerStates.SuperJump);
+
+        ApplyPresentationForCurrentForm();
     }
 
     private void CaptureFallbackInput()
@@ -358,11 +366,23 @@ public class PlayerController : MonoBehaviour
         movementController.moveSpeed = formSettings.moveSpeed;
         movementController.jumpForce = formSettings.jumpForce;
         ApplyGravityMultiplier(formSettings.gravityMultiplier);
+        ApplyPresentationForCurrentForm();
     }
 
     private bool IsSuperJumpFormActive()
     {
-        return currentFormType == PlayerFormType.SuperJump && superJumpState != null;
+        return currentFormType == PlayerFormType.SuperJump && superJumpState != null && SuperJumpSettings != null;
+    }
+
+    private void ApplyPresentationForCurrentForm()
+    {
+        if (playerSettings == null || presentationBinder == null)
+        {
+            return;
+        }
+
+        var formSettings = playerSettings.GetFormSettings(currentFormType);
+        presentationBinder.ApplyPresentation(formSettings != null ? formSettings.presentation : null);
     }
 
     private bool IsInGroundedLocomotionState()
@@ -380,7 +400,7 @@ public class PlayerController : MonoBehaviour
 
         isChargingSuperJump = true;
         superJumpChargeTimer = 0f;
-        pendingSuperJumpMultiplier = superJumpMinMultiplier;
+        pendingSuperJumpMultiplier = GetSuperJumpMinMultiplier();
     }
 
     private void ChargeSuperJump(float deltaTime)
@@ -397,7 +417,7 @@ public class PlayerController : MonoBehaviour
         }
 
         superJumpChargeTimer += Mathf.Max(0f, deltaTime);
-        superJumpChargeTimer = Mathf.Min(superJumpChargeTimer, superJumpMaxChargeTime);
+        superJumpChargeTimer = Mathf.Min(superJumpChargeTimer, GetSuperJumpMaxChargeTime());
         pendingSuperJumpMultiplier = CalculateSuperJumpMultiplier();
     }
 
@@ -431,7 +451,7 @@ public class PlayerController : MonoBehaviour
     private void ResetSuperJumpCharge()
     {
         superJumpChargeTimer = 0f;
-        pendingSuperJumpMultiplier = superJumpMinMultiplier;
+        pendingSuperJumpMultiplier = GetSuperJumpMinMultiplier();
     }
 
     private void ClearSuperJumpData()
@@ -443,27 +463,121 @@ public class PlayerController : MonoBehaviour
 
     private float CalculateSuperJumpMultiplier()
     {
-        if (superJumpMaxChargeTime <= 0f)
+        var maxChargeTime = GetSuperJumpMaxChargeTime();
+        if (maxChargeTime <= 0f)
         {
-            return superJumpMaxMultiplier;
+            return GetSuperJumpMaxMultiplier();
         }
 
-        var normalized = Mathf.Clamp01(superJumpChargeTimer / superJumpMaxChargeTime);
-        return Mathf.Lerp(superJumpMinMultiplier, superJumpMaxMultiplier, normalized);
+        var normalized = Mathf.Clamp01(superJumpChargeTimer / maxChargeTime);
+        return Mathf.Lerp(GetSuperJumpMinMultiplier(), GetSuperJumpMaxMultiplier(), normalized);
     }
 
     public bool TryConsumeSuperJumpCharge(out float multiplier)
     {
         if (!hasPendingSuperJump)
         {
-            multiplier = superJumpMinMultiplier;
+            multiplier = GetSuperJumpMinMultiplier();
             return false;
         }
 
         hasPendingSuperJump = false;
         multiplier = Mathf.Max(0.1f, pendingSuperJumpMultiplier);
-        pendingSuperJumpMultiplier = superJumpMinMultiplier;
+        pendingSuperJumpMultiplier = GetSuperJumpMinMultiplier();
         return true;
+    }
+
+    private void InitializeCombatStats()
+    {
+        currentHealth = GetMaxHealth();
+    }
+
+    private float GetSuperJumpMinMultiplier()
+    {
+        var settings = SuperJumpSettings;
+        var rawValue = settings != null ? settings.minChargeMultiplier : 1f;
+        return Mathf.Max(0.1f, rawValue);
+    }
+
+    private float GetSuperJumpMaxMultiplier()
+    {
+        var settings = SuperJumpSettings;
+        var minValue = GetSuperJumpMinMultiplier();
+        if (settings == null)
+        {
+            return minValue;
+        }
+
+        return Mathf.Max(minValue, settings.maxChargeMultiplier);
+    }
+
+    private float GetSuperJumpMaxChargeTime()
+    {
+        var settings = SuperJumpSettings;
+        if (settings == null)
+        {
+            return 0f;
+        }
+
+        return Mathf.Max(0f, settings.maxChargeTime);
+    }
+
+    private PlayerCombatSettings RequireCombatSettings()
+    {
+        return CombatSettings;
+    }
+
+    private int GetMaxHealth()
+    {
+        var settings = RequireCombatSettings();
+        var configured = settings != null ? settings.maxHealth : 1;
+        return Mathf.Max(1, configured);
+    }
+
+    private int GetAttackPower()
+    {
+        var settings = RequireCombatSettings();
+        var configured = settings != null ? settings.attackPower : 1;
+        return Mathf.Max(0, configured);
+    }
+
+    private float EvaluateDamageFalloff(float normalizedInput)
+    {
+        var settings = RequireCombatSettings();
+        if (settings == null || settings.damageFalloff == null)
+        {
+            return 1f;
+        }
+
+        var clamped = Mathf.Clamp01(normalizedInput);
+        return Mathf.Max(0f, settings.damageFalloff.Evaluate(clamped));
+    }
+
+    public void ApplyDamage(int amount)
+    {
+        if (amount <= 0)
+        {
+            return;
+        }
+
+        currentHealth = Mathf.Max(0, currentHealth - amount);
+    }
+
+    public void Heal(int amount)
+    {
+        if (amount <= 0)
+        {
+            return;
+        }
+
+        currentHealth = Mathf.Min(GetMaxHealth(), currentHealth + amount);
+    }
+
+    public int GetAttackDamage(float normalizedFactor = 1f)
+    {
+        var falloffMultiplier = EvaluateDamageFalloff(normalizedFactor);
+        var scaledDamage = Mathf.RoundToInt(GetAttackPower() * falloffMultiplier);
+        return Mathf.Max(0, scaledDamage);
     }
 
     public IPlayerState IdleState => idleState;
@@ -472,4 +586,7 @@ public class PlayerController : MonoBehaviour
     public IPlayerState FallState => fallState;
     public IPlayerState InteractState => interactState;
     public IPlayerState SuperJumpState => superJumpState;
+    public int CurrentHealth => currentHealth;
+    public int MaxHealth => GetMaxHealth();
+    public int AttackPower => GetAttackPower();
 }
