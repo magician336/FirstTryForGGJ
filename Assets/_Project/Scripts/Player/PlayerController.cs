@@ -336,7 +336,8 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        movementController.moveSpeed = formSettings.moveSpeed * Mathf.Max(0.1f, moveMultiplier);
+        var baseMoveSpeed = GetFormMoveSpeed(formSettings);
+        movementController.moveSpeed = baseMoveSpeed * Mathf.Max(0.1f, moveMultiplier);
         movementController.jumpForce = formSettings.jumpForce * Mathf.Max(0.1f, jumpMultiplier);
     }
 
@@ -363,7 +364,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        movementController.moveSpeed = formSettings.moveSpeed;
+        movementController.moveSpeed = GetFormMoveSpeed(formSettings);
         movementController.jumpForce = formSettings.jumpForce;
         ApplyGravityMultiplier(formSettings.gravityMultiplier);
         ApplyPresentationForCurrentForm();
@@ -372,6 +373,21 @@ public class PlayerController : MonoBehaviour
     private bool IsSuperJumpFormActive()
     {
         return currentFormType == PlayerFormType.SuperJump && superJumpState != null && SuperJumpSettings != null;
+    }
+
+    private float GetFormMoveSpeed(NormalHeadFormSettings formSettings)
+    {
+        if (formSettings == null)
+        {
+            return movementController != null ? movementController.moveSpeed : 0f;
+        }
+
+        if (formSettings is FishFormSettings fishSettings)
+        {
+            return Mathf.Max(0.1f, fishSettings.swimMoveSpeed);
+        }
+
+        return Mathf.Max(0.1f, formSettings.moveSpeed);
     }
 
     private void ApplyPresentationForCurrentForm()

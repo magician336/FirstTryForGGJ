@@ -5,7 +5,7 @@ public class PlayerSettings : ScriptableObject
 {
     [Header("Form Settings")]
     public NormalHeadFormSettings normalHeadForm;
-    public NormalHeadFormSettings fishForm;
+    public FishFormSettings fishForm;
     public SuperJumpFormSettings superJumpForm;
 
     [Header("Interaction Settings")]

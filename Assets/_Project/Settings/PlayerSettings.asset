@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d3762af380b7394590ffb31c909e021, type: 3}
   m_Name: PlayerSettings
   m_EditorClassIdentifier: 
-  normalHeadForm: {fileID: 0}
+  normalHeadForm: {fileID: 11400000, guid: 9dc16a32d85886b43ab7092062846cf1, type: 2}
   fishForm: {fileID: 0}
   superJumpForm: {fileID: 0}
   interactionSettings: {fileID: 0}
