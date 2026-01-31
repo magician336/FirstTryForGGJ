@@ -14,6 +14,8 @@ public class GroundChecker : MonoBehaviour
 
     void FixedUpdate()
     {
+
+        Debug.Log("GroundCheck");
         CheckGround();
     }
 
