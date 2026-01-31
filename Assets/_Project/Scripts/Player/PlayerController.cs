@@ -15,6 +15,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private PlayerFormType startingForm = PlayerFormType.NormalHead;
     [SerializeField] private HealthController healthController;
 
+    // Public accessor for settings
+    public PlayerSettings Settings => playerSettings;
+
     private PlayerStateMachine stateMachine;
     private Rigidbody2D body;
     private PlayerInputHandler cachedInputHandler;
