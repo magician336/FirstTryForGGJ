@@ -27,6 +27,17 @@ public class SwingController : MonoBehaviour
         {
             lineRenderer.enabled = false;
             lineRenderer.positionCount = 2;
+            lineRenderer.useWorldSpace = true; // 关键：确保使用世界坐标
+        }
+    }
+
+    private void LateUpdate()
+    {
+        // 将渲染逻辑移至 LateUpdate，解决物理更新与相机更新不同步导致的抖动
+        if (IsSwinging && lineRenderer != null)
+        {
+            lineRenderer.SetPosition(0, transform.position);
+            lineRenderer.SetPosition(1, anchorPoint);
         }
     }
 
@@ -67,20 +78,17 @@ public class SwingController : MonoBehaviour
 
     public void UpdateSwing(float moveInput, float verticalInput)
     {
-        if (!IsSwinging || joint == null || rb == null || lineRenderer == null) return;
+        if (!IsSwinging || joint == null || rb == null) return;
 
         // 2. W/S 控制长度 - W(>0)缩短, S(<0)伸长
         if (Mathf.Abs(verticalInput) > 0.1f)
         {
-            joint.distance -= verticalInput * climbSpeed * Time.deltaTime;
+            // 在 PhysicsUpdate 中使用 fixedDeltaTime
+            joint.distance -= verticalInput * climbSpeed * Time.fixedDeltaTime;
         }
 
         // 3. A/D 控制摆动 (施加水平力)
         rb.AddForce(new Vector2(moveInput * swingForce, 0));
-
-        // 4. 更新视觉线段
-        lineRenderer.SetPosition(0, transform.position);
-        lineRenderer.SetPosition(1, anchorPoint);
     }
 
     public void StopSwing()
@@ -98,5 +106,23 @@ public class SwingController : MonoBehaviour
         maxDistance = settings.maxWebDistance;
         climbSpeed = settings.climbSpeed;
         swingForce = settings.swingForce;
+    }
+
+    private void OnDrawGizmos()
+    {
+        // 绘制发射方向预测线
+        Gizmos.color = Color.yellow;
+        Vector2 pos = transform.position;
+        Vector2 dirRight = new Vector2(1, 1).normalized;
+        Gizmos.DrawLine(pos, pos + dirRight * maxDistance);
+        Vector2 dirLeft = new Vector2(-1, 1).normalized;
+        Gizmos.DrawLine(pos, pos + dirLeft * maxDistance);
+
+        if (IsSwinging)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(anchorPoint, 0.2f);
+            Gizmos.DrawLine(pos, anchorPoint);
+        }
     }
 }
