@@ -39,7 +39,7 @@ public class InputSettings : ScriptableObject
         interactKey = KeyCode.F;
         nextFormKey = KeyCode.E;
         previousFormKey = KeyCode.Q;
-        fireKey = KeyCode.Mouse0;
+        fireKey = KeyCode.K;
         dashKey = KeyCode.LeftShift;
         swingKey = KeyCode.J;
     }

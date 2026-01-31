@@ -53,6 +53,7 @@ public class PlayerController : MonoBehaviour
     private bool hasPendingSuperJump;
     private float pendingSuperJumpMultiplier;
     private int currentHealth;
+    private float nextInkFireTime;
 
     void Awake()
     {
@@ -309,6 +310,11 @@ public class PlayerController : MonoBehaviour
         {
             OnSwingButtonDown();
         }
+
+        if (Input.GetKeyDown(GetFireKey()))
+        {
+            OnFireButtonDown();
+        }
     }
 
     private void UpdateGroundState()
@@ -467,6 +473,40 @@ public class PlayerController : MonoBehaviour
                 ChangeState(swingState);
             }
         }
+    }
+
+    public void OnFireButtonDown()
+    {
+        if (currentFormType == PlayerFormType.Fish)
+        {
+            FireSquidInk();
+        }
+    }
+
+    private void FireSquidInk()
+    {
+        var settings = FishSettings;
+        if (settings == null || settings.squidInkPrefab == null)
+        {
+            return;
+        }
+
+        if (Time.time < nextInkFireTime)
+        {
+            return;
+        }
+
+        // 确定发射方向
+        bool faceRight = transform.localScale.x > 0;
+        Vector2 spawnPos = transform.position;
+
+        SquidInk ink = Instantiate(settings.squidInkPrefab, spawnPos, Quaternion.identity);
+        if (ink != null)
+        {
+            ink.InitializeFrom(settings, faceRight);
+        }
+
+        nextInkFireTime = Time.time + settings.inkCooldown;
     }
 
     // Backwards compatibility for existing callers
@@ -641,6 +681,12 @@ public class PlayerController : MonoBehaviour
 
         var formSettings = playerSettings.GetFormSettings(currentFormType);
         presentationBinder.ApplyPresentation(formSettings != null ? formSettings.presentation : null);
+    }
+
+    private KeyCode GetFireKey()
+    {
+        var inputSettings = InputSettingsAsset;
+        return inputSettings != null ? inputSettings.FireKey : KeyCode.Mouse0;
     }
 
     private KeyCode GetJumpKey()

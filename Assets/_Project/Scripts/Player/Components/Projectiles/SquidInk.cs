@@ -71,4 +71,13 @@ public class SquidInk : MonoBehaviour
 
         rb.velocity = currentDirection * travelSpeed;
     }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        // 遇到碰撞体销毁，可以根据需要排除触发器或特定层级
+        if (!other.isTrigger)
+        {
+            Destroy(gameObject);
+        }
+    }
 }
