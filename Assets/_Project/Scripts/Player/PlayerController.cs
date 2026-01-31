@@ -169,7 +169,6 @@ public class PlayerController : MonoBehaviour
 
     public void SwitchForm(PlayerFormType newForm, bool force)
     {
-        Debug.Log("SwitchForm");
         if (!force && currentFormType == newForm)
         {
             return;
@@ -179,6 +178,12 @@ public class PlayerController : MonoBehaviour
         {
             Debug.LogWarning($"Attempted to switch to locked form {newForm}");
             return;
+        }
+
+        // 切换形态时，如果当前皮肤索引不在新形态的已解锁列表中，则重置为 0
+        if (!IsSkinUnlocked(newForm, currentSkinIndex))
+        {
+            currentSkinIndex = 0;
         }
 
         var factory = PlayerFormFactoryRegistry.GetFactory(newForm);
@@ -1057,17 +1062,51 @@ public class PlayerController : MonoBehaviour
     }
     public void CycleSkin()
     {
-        if (playerSettings == null) return;
+        if (playerSettings == null || FormUnlockSettings == null) return;
 
         int skinCount = playerSettings.GetSkinCount(currentFormType);
         if (skinCount <= 1) return;
 
-        currentSkinIndex = (currentSkinIndex + 1) % skinCount;
+        // 寻找下一个已解锁的皮肤索引
+        int nextIndex = currentSkinIndex;
+        for (int i = 0; i < skinCount; i++)
+        {
+            nextIndex = (nextIndex + 1) % skinCount;
+            if (FormUnlockSettings.IsSkinUnlocked(currentFormType, nextIndex))
+            {
+                currentSkinIndex = nextIndex;
+                break;
+            }
+        }
 
         // 重新应用当前形态的设置（包括外貌和物理参数）
         ApplyFormSettings(currentFormType);
 
         Debug.Log($"[PlayerController] 已切换皮肤索引: {currentSkinIndex}");
+    }
+
+    public void ForceUnlockSkin(PlayerFormType formType, int skinIndex)
+    {
+        if (FormUnlockSettings == null) return;
+
+        // 确保形态也标记为解锁（逻辑兼容）
+        FormUnlockSettings.EnsureFormUnlocked(formType);
+        FormUnlockSettings.EnsureSkinUnlocked(formType, skinIndex);
+
+        Debug.Log($"<color=green>[PlayerController] 强制解锁皮肤成功: 形态 {formType}, 索引 {skinIndex}</color>");
+    }
+
+    public void SwitchFormWithSkin(PlayerFormType formType, int skinIndex, bool force = false)
+    {
+        currentSkinIndex = skinIndex;
+        SwitchForm(formType, force);
+        // 如果 SwitchForm 内部因为已经相同形态而跳过，这里手动重新应用一次设置以刷新皮肤
+        ApplyFormSettings(formType);
+    }
+
+    private bool IsSkinUnlocked(PlayerFormType formType, int skinIndex)
+    {
+        return FormUnlockSettings != null && FormUnlockSettings.IsSkinUnlocked(formType, skinIndex);
     }
 }
 

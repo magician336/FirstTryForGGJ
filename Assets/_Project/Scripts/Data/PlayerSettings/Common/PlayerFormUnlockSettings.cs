@@ -4,7 +4,15 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "PlayerFormUnlockSettings", menuName = "Player/Settings/Form Unlock Settings")]
 public class PlayerFormUnlockSettings : ScriptableObject
 {
+    [System.Serializable]
+    public class FormSkinUnlockData
+    {
+        public PlayerFormType formType;
+        public List<int> unlockedIndices = new() { 0 }; // 默认解锁第一个索引
+    }
+
     [SerializeField] private List<PlayerFormType> unlockedForms = new() { PlayerFormType.NormalHead };
+    [SerializeField] private List<FormSkinUnlockData> unlockedSkins = new();
 
     public IReadOnlyList<PlayerFormType> UnlockedForms => unlockedForms;
 
@@ -18,28 +26,58 @@ public class PlayerFormUnlockSettings : ScriptableObject
         return unlockedForms.Contains(formType);
     }
 
+    public bool IsSkinUnlocked(PlayerFormType formType, int skinIndex)
+    {
+        // 索引 0 默认永远解锁
+        if (skinIndex == 0) return true;
+
+        var data = unlockedSkins.Find(d => d.formType == formType);
+        return data != null && data.unlockedIndices.Contains(skinIndex);
+    }
+
+    public void EnsureFormUnlocked(PlayerFormType formType) => EnsureUnlocked(formType);
+
     public void EnsureUnlocked(PlayerFormType formType)
     {
-        if (unlockedForms == null)
-        {
-            unlockedForms = new List<PlayerFormType>();
-        }
-
+        // ...existing code...
         if (!unlockedForms.Contains(formType))
         {
             unlockedForms.Add(formType);
+
+            // 同时确保皮肤解锁数据中也有该形态记录
+            if (unlockedSkins.Find(d => d.formType == formType) == null)
+            {
+                unlockedSkins.Add(new FormSkinUnlockData { formType = formType });
+            }
+
             Debug.Log($"[PlayerFormUnlockSettings] 资产 '{name}' 已添加新形态: {formType}");
 
-            // 关键修复：在编辑器环境下标记为“脏”，确保 Inspector 同步显示
-#if UNITY_EDITOR
-            UnityEditor.EditorUtility.SetDirty(this);
-            // 强制保存一次（可选，防止 PlayMode 退出后丢失）
-            // UnityEditor.AssetDatabase.SaveAssets(); 
-#endif
+            MarkDirty();
         }
-        else
+        // ...existing code...
+    }
+
+    public void EnsureSkinUnlocked(PlayerFormType formType, int skinIndex)
+    {
+        var data = unlockedSkins.Find(d => d.formType == formType);
+        if (data == null)
         {
-            Debug.Log($"[PlayerFormUnlockSettings] 形态 {formType} 已经存在于资产 '{name}' 中。");
+            data = new FormSkinUnlockData { formType = formType };
+            unlockedSkins.Add(data);
         }
+
+        if (!data.unlockedIndices.Contains(skinIndex))
+        {
+            data.unlockedIndices.Add(skinIndex);
+            Debug.Log($"[PlayerFormUnlockSettings] 资产 '{name}' 已为形态 {formType} 解锁新皮肤索引: {skinIndex}");
+            MarkDirty();
+        }
+    }
+
+    private void MarkDirty()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+#endif
     }
 }
