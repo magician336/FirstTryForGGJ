@@ -3,7 +3,15 @@ guid: 2d3762af380b7394590ffb31c909e021
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - normalHeadForm: {instanceID: 0}
+  - fishForm: {fileID: 11400000, guid: a9ca6c455dd70054580552451b41feb8, type: 2}
+  - superJumpForm: {instanceID: 0}
+  - swingForm: {instanceID: 0}
+  - inputSettings: {instanceID: 0}
+  - interactionSettings: {instanceID: 0}
+  - combatSettings: {instanceID: 0}
+  - formUnlockSettings: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
