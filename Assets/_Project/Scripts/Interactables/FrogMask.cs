@@ -29,6 +29,7 @@ public class FrogMask : Interactable
 
     public override void TriggerInteract()
     {
+	Debug.Log("triggered");
         if (consumed)
         {
             return;
