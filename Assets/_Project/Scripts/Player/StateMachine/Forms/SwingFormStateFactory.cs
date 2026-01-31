@@ -31,7 +31,10 @@ public class SwingFormStateFactory : PlayerFormStateFactory
         }
 
         // 获取并应用具体的 SwingSettings
-        var swingSettings = controller.Settings.swingForm;
+        // 注意：由于皮肤系统重构，现在需要通过 GetFormSettings 获取当前激活的皮肤配置
+        // 这里我们默认取 index 0，如果要支持 Factory 级别的动态皮肤，需要从 Controller 获取 skinIndex
+        // 但目前 PlayerController.ApplyFormSettings 已经负责了基础应用，这里主要是为了给 SwingController 传参
+        var swingSettings = controller.Settings.GetFormSettings(PlayerFormType.Spider) as SwingFormSettings;
         var swingController = controller.GetComponent<SwingController>();
 
         if (swingController != null && swingSettings != null)

@@ -4,6 +4,7 @@ using UnityEngine;
 public class BossSettings : ScriptableObject
 {
     public float moveSpeed = 3f;
+    public float attackRange = 2f;
     public float chaseRange = 10f;
     public int touchDamage = 1;
 

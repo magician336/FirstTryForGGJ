@@ -26,10 +26,11 @@ public class PlayerController : MonoBehaviour
     private readonly Dictionary<PlayerFormType, PlayerFormStateBundle> formBundles = new();
     private PlayerFormType currentFormType = PlayerFormType.NormalHead;
     private PlayerFormStateFactory currentFormFactory;
-    private SuperJumpFormSettings SuperJumpSettings => playerSettings != null ? playerSettings.superJumpForm : null;
+    private SuperJumpFormSettings SuperJumpSettings => playerSettings != null ? playerSettings.GetFormSettings(PlayerFormType.SuperJump, currentSkinIndex) as SuperJumpFormSettings : null;
     private PlayerCombatSettings CombatSettings => playerSettings != null ? playerSettings.combatSettings : null;
     private PlayerFormUnlockSettings FormUnlockSettings => playerSettings != null ? playerSettings.formUnlockSettings : null;
     private InputSettings InputSettingsAsset => playerSettings != null ? playerSettings.inputSettings : null;
+
     private readonly List<PlayerFormType> unlockedFormBuffer = new();
 
     private IPlayerState idleState;
@@ -54,6 +55,7 @@ public class PlayerController : MonoBehaviour
     private float pendingSuperJumpMultiplier;
     private int currentHealth;
     private float nextInkFireTime;
+    private int currentSkinIndex = 0;
 
     void Awake()
     {
@@ -149,6 +151,7 @@ public class PlayerController : MonoBehaviour
             cachedInputHandler.nextFormKey = GetNextFormKey();
             cachedInputHandler.previousFormKey = GetPreviousFormKey();
             cachedInputHandler.swingKey = GetSwingKey();
+            cachedInputHandler.fireKey = GetFireKey();
         }
     }
 
@@ -315,6 +318,11 @@ public class PlayerController : MonoBehaviour
         {
             OnFireButtonDown();
         }
+
+        if (Input.GetKeyDown(GetSkinKey()))
+        {
+            CycleSkin();
+        }
     }
 
     private void UpdateGroundState()
@@ -477,6 +485,7 @@ public class PlayerController : MonoBehaviour
 
     public void OnFireButtonDown()
     {
+        Debug.Log($"[PlayerController] OnFireButtonDown called. Current Form: {currentFormType}");
         if (currentFormType == PlayerFormType.Fish)
         {
             FireSquidInk();
@@ -486,13 +495,21 @@ public class PlayerController : MonoBehaviour
     private void FireSquidInk()
     {
         var settings = FishSettings;
-        if (settings == null || settings.squidInkPrefab == null)
+        if (settings == null)
         {
+            Debug.LogError("[PlayerController] FishSettings is NULL!");
+            return;
+        }
+
+        if (settings.squidInkPrefab == null)
+        {
+            Debug.LogError("[PlayerController] SquidInkPrefab is NOT assigned in FishSettings asset!");
             return;
         }
 
         if (Time.time < nextInkFireTime)
         {
+            Debug.Log($"[PlayerController] Ink fire on cooldown. Wait {nextInkFireTime - Time.time:F2}s");
             return;
         }
 
@@ -500,10 +517,15 @@ public class PlayerController : MonoBehaviour
         bool faceRight = transform.localScale.x > 0;
         Vector2 spawnPos = transform.position;
 
+        Debug.Log($"[PlayerController] Instantiating Ink at {spawnPos}. FaceRight: {faceRight}");
         SquidInk ink = Instantiate(settings.squidInkPrefab, spawnPos, Quaternion.identity);
         if (ink != null)
         {
             ink.InitializeFrom(settings, faceRight);
+        }
+        else
+        {
+            Debug.LogError("[PlayerController] Failed to Instantiate SquidInk!");
         }
 
         nextInkFireTime = Time.time + settings.inkCooldown;
@@ -534,7 +556,7 @@ public class PlayerController : MonoBehaviour
     public float VerticalVelocity => body != null ? body.velocity.y : 0f;
 
     public PlayerLadderSettings LadderSettings => playerSettings != null ? playerSettings.ladderSettings : null;
-    public FishFormSettings FishSettings => playerSettings != null ? playerSettings.fishForm : null;
+    public FishFormSettings FishSettings => playerSettings != null ? playerSettings.GetFormSettings(PlayerFormType.Fish, currentSkinIndex) as FishFormSettings : null;
     public bool IsTouchingLadder { get; private set; }
 
     /// <summary>
@@ -640,7 +662,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        var formSettings = playerSettings.GetFormSettings(formType);
+        var formSettings = playerSettings.GetFormSettings(formType, currentSkinIndex);
         if (formSettings == null || movementController == null)
         {
             return;
@@ -661,7 +683,7 @@ public class PlayerController : MonoBehaviour
     {
         if (formSettings == null)
         {
-            return movementController != null ? movementController.moveSpeed : 0f;
+            return 0.1f;
         }
 
         if (formSettings is FishFormSettings fishSettings)
@@ -679,8 +701,14 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        var formSettings = playerSettings.GetFormSettings(currentFormType);
+        var formSettings = playerSettings.GetFormSettings(currentFormType, currentSkinIndex);
         presentationBinder.ApplyPresentation(formSettings != null ? formSettings.presentation : null);
+    }
+
+    private KeyCode GetSkinKey()
+    {
+        var inputSettings = InputSettingsAsset;
+        return inputSettings != null ? inputSettings.SkinKey : KeyCode.R;
     }
 
     private KeyCode GetFireKey()
@@ -1002,6 +1030,20 @@ public class PlayerController : MonoBehaviour
     public void SetGravityScale(float scale)
     {
         body.gravityScale = scale;
+    }
+    public void CycleSkin()
+    {
+        if (playerSettings == null) return;
+
+        int skinCount = playerSettings.GetSkinCount(currentFormType);
+        if (skinCount <= 1) return;
+
+        currentSkinIndex = (currentSkinIndex + 1) % skinCount;
+
+        // 重新应用当前形态的设置（包括外貌和物理参数）
+        ApplyFormSettings(currentFormType);
+
+        Debug.Log($"[PlayerController] 已切换皮肤索引: {currentSkinIndex}");
     }
 }
 

@@ -13,7 +13,23 @@ public class BossController : MonoBehaviour
 
     public Rigidbody2D Rb { get; private set; }
     public HealthController Health { get; private set; }
-    public Transform PlayerTransform => GameManager.Instance.Player.transform;
+    public Transform PlayerTransform
+    {
+        get
+        {
+            if (GameManager.Instance == null)
+            {
+                Debug.LogWarning("[BossController] GameManager.Instance 为空！");
+                return null;
+            }
+            if (GameManager.Instance.Player == null)
+            {
+                Debug.LogWarning("[BossController] GameManager 中没有玩家引用！请检查玩家是否生成。");
+                return null;
+            }
+            return GameManager.Instance.Player.transform;
+        }
+    }
 
     private void Awake()
     {
@@ -31,6 +47,7 @@ public class BossController : MonoBehaviour
 
         // 初始状态可以在此处初始化，例如进入追逐状态
         StateMachine.Initialize(new BossChaseState(this));
+        Debug.Log("[BossController] 已进入初始追逐状态。");
         Health.OnDie += HandleDeath;
     }
 

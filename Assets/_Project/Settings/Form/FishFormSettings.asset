@@ -20,7 +20,7 @@ MonoBehaviour:
   waterLayer:
     serializedVersion: 2
     m_Bits: 16
-  squidInkPrefab: {fileID: 0}
-  inkSpeed: 1
-  inkLifetime: 2
-  inkCooldown: 0.5
+  squidInkPrefab: {fileID: 6539641140416896116, guid: 94c968cadf58c64418fd388b973a1219, type: 3}
+  inkSpeed: 2
+  inkLifetime: 10
+  inkCooldown: 1

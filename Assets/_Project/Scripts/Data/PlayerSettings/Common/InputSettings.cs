@@ -16,6 +16,7 @@ public class InputSettings : ScriptableObject
     [SerializeField] private KeyCode fireKey = KeyCode.K;
     [SerializeField] private KeyCode dashKey = KeyCode.LeftShift;
     [SerializeField] private KeyCode swingKey = KeyCode.J;
+    [SerializeField] private KeyCode skinKey = KeyCode.R;
 
     public string HorizontalAxis => horizontalAxis;
     public string VerticalAxis => verticalAxis;
@@ -28,6 +29,7 @@ public class InputSettings : ScriptableObject
     public KeyCode FireKey => fireKey;
     public KeyCode DashKey => dashKey;
     public KeyCode SwingKey => swingKey;
+    public KeyCode SkinKey => skinKey;
 
     [ContextMenu("Reset To Defaults")]
     public void ResetToDefaults()
@@ -42,5 +44,6 @@ public class InputSettings : ScriptableObject
         fireKey = KeyCode.K;
         dashKey = KeyCode.LeftShift;
         swingKey = KeyCode.J;
+        skinKey = KeyCode.R;
     }
 }

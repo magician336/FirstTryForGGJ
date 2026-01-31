@@ -9,16 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe6ea2afe9e5e724482b8753e16de327, type: 3}
-  m_Name: InputSettings
+  m_Script: {fileID: 11500000, guid: dac32a15ffaa8bb40813d7575e8461b9, type: 3}
+  m_Name: BossSettings
   m_EditorClassIdentifier: 
-  horizontalAxis: Horizontal
-  verticalAxis: Vertical
-  useRawAxis: 1
-  jumpKey: 32
-  interactKey: 102
-  nextFormKey: 101
-  previousFormKey: 113
-  fireKey: 107
-  dashKey: 304
-  swingKey: 106
+  moveSpeed: 100
+  attackRange: 100
+  chaseRange: 60
+  touchDamage: 1
+  fistArcRadius: 2
+  fistArcSpeed: 2
+  fistBounceForce: 5

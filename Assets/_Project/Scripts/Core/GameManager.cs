@@ -150,12 +150,7 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        // 测试：按 R 键强制重生
-        if (Input.GetKeyDown(KeyCode.R) && Player != null)
-        {
-            Debug.Log($"[Test] 强制传送到: {currentRespawnPoint}");
-            Player.transform.position = currentRespawnPoint;
-        }
+
     }
 
     private void SpawnOrFindPlayer()

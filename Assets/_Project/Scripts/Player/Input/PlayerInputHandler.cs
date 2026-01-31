@@ -10,6 +10,7 @@ public class PlayerInputHandler : MonoBehaviour
     [SerializeField] private KeyCode fallbackNextFormKey = KeyCode.E;
     [SerializeField] private KeyCode fallbackPreviousFormKey = KeyCode.Q;
     [SerializeField] private KeyCode fallbackSwingKey = KeyCode.J;
+    [SerializeField] private KeyCode fallbackFireKey = KeyCode.Mouse0;
     [SerializeField] private InputSettings inputSettings;
 
     private PlayerController playerController;
@@ -19,6 +20,7 @@ public class PlayerInputHandler : MonoBehaviour
     public KeyCode nextFormKey { set { fallbackNextFormKey = value; } }
     public KeyCode previousFormKey { set { fallbackPreviousFormKey = value; } }
     public KeyCode swingKey { set { fallbackSwingKey = value; } }
+    public KeyCode fireKey { set { fallbackFireKey = value; } }
 
     void Awake()
     {
@@ -53,6 +55,11 @@ public class PlayerInputHandler : MonoBehaviour
     private KeyCode GetSwingKey()
     {
         return inputSettings != null ? inputSettings.SwingKey : fallbackSwingKey;
+    }
+
+    private KeyCode GetFireKey()
+    {
+        return inputSettings != null ? inputSettings.FireKey : fallbackFireKey;
     }
 
     void Update()
@@ -104,6 +111,11 @@ public class PlayerInputHandler : MonoBehaviour
         if (Input.GetKeyDown(GetSwingKey()))
         {
             playerController.OnSwingButtonDown();
+        }
+
+        if (Input.GetKeyDown(GetFireKey()))
+        {
+            playerController.OnFireButtonDown();
         }
     }
 }
