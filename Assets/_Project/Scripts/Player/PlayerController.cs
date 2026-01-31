@@ -23,6 +23,9 @@ public class PlayerController : MonoBehaviour
     private PlayerFormStateFactory currentFormFactory;
     private SuperJumpFormSettings SuperJumpSettings => playerSettings != null ? playerSettings.superJumpForm : null;
     private PlayerCombatSettings CombatSettings => playerSettings != null ? playerSettings.combatSettings : null;
+    private PlayerFormUnlockSettings FormUnlockSettings => playerSettings != null ? playerSettings.formUnlockSettings : null;
+    private InputSettings InputSettingsAsset => playerSettings != null ? playerSettings.inputSettings : null;
+    private readonly List<PlayerFormType> unlockedFormBuffer = new();
 
     private IPlayerState idleState;
     private IPlayerState runState;
@@ -72,6 +75,8 @@ public class PlayerController : MonoBehaviour
 
         stateMachine = new PlayerStateMachine();
         InitializeFormSystem();
+
+        Debug.Log($"[PlayerController] Jump: {GetJumpKey()}, Interact: {GetInteractKey()}, Next: {GetNextFormKey()}, Prev: {GetPreviousFormKey()}");
     }
 
     void Update()
@@ -98,18 +103,23 @@ public class PlayerController : MonoBehaviour
         ApplyFormSettings(currentFormType);
 
         var interactionSettings = playerSettings.interactionSettings;
-        if (interactionSettings != null)
+        if (interactionController != null)
         {
-            if (interactionController != null)
+            interactionController.ApplyInputSettings(InputSettingsAsset);
+
+            if (interactionSettings != null)
             {
-                interactionController.interactKey = interactionSettings.interactKey;
                 interactionController.interactRange = interactionSettings.interactRange;
             }
+        }
 
-            if (cachedInputHandler != null)
-            {
-                cachedInputHandler.interactKey = interactionSettings.interactKey;
-            }
+        if (cachedInputHandler != null)
+        {
+            cachedInputHandler.ApplyInputSettings(InputSettingsAsset);
+            cachedInputHandler.jumpKey = GetJumpKey();
+            cachedInputHandler.interactKey = GetInteractKey();
+            cachedInputHandler.nextFormKey = GetNextFormKey();
+            cachedInputHandler.previousFormKey = GetPreviousFormKey();
         }
     }
 
@@ -127,8 +137,15 @@ public class PlayerController : MonoBehaviour
 
     public void SwitchForm(PlayerFormType newForm, bool force)
     {
+        Debug.Log("SwitchForm");
         if (!force && currentFormType == newForm)
         {
+            return;
+        }
+
+        if (!force && !IsFormUnlocked(newForm))
+        {
+            Debug.LogWarning($"Attempted to switch to locked form {newForm}");
             return;
         }
 
@@ -191,27 +208,35 @@ public class PlayerController : MonoBehaviour
 
         SetMovementInput(Input.GetAxisRaw("Horizontal"));
 
-        if (Input.GetButtonDown("Jump"))
+        var jumpKey = GetJumpKey();
+        if (Input.GetKeyDown(jumpKey))
         {
             OnJumpButtonDown();
         }
 
-        if (Input.GetButton("Jump"))
+        if (Input.GetKey(jumpKey))
         {
             OnJumpButtonHeld(Time.deltaTime);
         }
 
-        if (Input.GetButtonUp("Jump"))
+        if (Input.GetKeyUp(jumpKey))
         {
             OnJumpButtonUp();
         }
 
-        KeyCode interactKey = playerSettings != null && playerSettings.interactionSettings != null
-            ? playerSettings.interactionSettings.interactKey
-            : KeyCode.E;
-        if (Input.GetKeyDown(interactKey))
+        if (Input.GetKeyDown(GetInteractKey()))
         {
             QueueInteractInput();
+        }
+
+        if (Input.GetKeyDown(GetNextFormKey()))
+        {
+            RequestNextForm();
+        }
+
+        if (Input.GetKeyDown(GetPreviousFormKey()))
+        {
+            RequestPreviousForm();
         }
     }
 
@@ -272,6 +297,8 @@ public class PlayerController : MonoBehaviour
     // Backwards compatibility for existing callers
     public void TryJump() => QueueJumpInput();
     public void TryInteract() => QueueInteractInput();
+    public void RequestNextForm() => CycleForm(1);
+    public void RequestPreviousForm() => CycleForm(-1);
 
     public float HorizontalInput => movementInput;
 
@@ -399,6 +426,30 @@ public class PlayerController : MonoBehaviour
 
         var formSettings = playerSettings.GetFormSettings(currentFormType);
         presentationBinder.ApplyPresentation(formSettings != null ? formSettings.presentation : null);
+    }
+
+    private KeyCode GetJumpKey()
+    {
+        var inputSettings = InputSettingsAsset;
+        return inputSettings != null ? inputSettings.JumpKey : KeyCode.Space;
+    }
+
+    private KeyCode GetInteractKey()
+    {
+        var inputSettings = InputSettingsAsset;
+        return inputSettings != null ? inputSettings.InteractKey : KeyCode.F;
+    }
+
+    private KeyCode GetNextFormKey()
+    {
+        var inputSettings = InputSettingsAsset;
+        return inputSettings != null ? inputSettings.NextFormKey : KeyCode.E;
+    }
+
+    private KeyCode GetPreviousFormKey()
+    {
+        var inputSettings = InputSettingsAsset;
+        return inputSettings != null ? inputSettings.PreviousFormKey : KeyCode.Q;
     }
 
     private bool IsInGroundedLocomotionState()
@@ -594,6 +645,80 @@ public class PlayerController : MonoBehaviour
         var falloffMultiplier = EvaluateDamageFalloff(normalizedFactor);
         var scaledDamage = Mathf.RoundToInt(GetAttackPower() * falloffMultiplier);
         return Mathf.Max(0, scaledDamage);
+    }
+
+    private void CycleForm(int direction)
+    {
+        var forms = GetUnlockedFormsBuffer();
+        if (forms.Count <= 1)
+        {
+            return;
+        }
+
+        var currentIndex = forms.IndexOf(currentFormType);
+        if (currentIndex < 0)
+        {
+            currentIndex = 0;
+        }
+
+        var targetIndex = (currentIndex + direction) % forms.Count;
+        if (targetIndex < 0)
+        {
+            targetIndex += forms.Count;
+        }
+
+        var targetForm = forms[targetIndex];
+        if (targetForm == currentFormType)
+        {
+            return;
+        }
+
+        SwitchForm(targetForm);
+    }
+
+    private List<PlayerFormType> GetUnlockedFormsBuffer()
+    {
+        unlockedFormBuffer.Clear();
+
+        var unlockSettings = FormUnlockSettings;
+        if (unlockSettings != null && unlockSettings.UnlockedForms != null)
+        {
+            foreach (var form in unlockSettings.UnlockedForms)
+            {
+                if (!unlockedFormBuffer.Contains(form))
+                {
+                    unlockedFormBuffer.Add(form);
+                }
+            }
+        }
+
+        if (unlockedFormBuffer.Count == 0)
+        {
+            unlockedFormBuffer.Add(PlayerFormType.NormalHead);
+        }
+
+        if (!unlockedFormBuffer.Contains(startingForm))
+        {
+            unlockedFormBuffer.Add(startingForm);
+        }
+
+        if (!unlockedFormBuffer.Contains(currentFormType))
+        {
+            unlockedFormBuffer.Add(currentFormType);
+        }
+
+        return unlockedFormBuffer;
+    }
+
+    private bool IsFormUnlocked(PlayerFormType formType)
+    {
+        var unlockSettings = FormUnlockSettings;
+        if (unlockSettings == null || unlockSettings.UnlockedForms == null || unlockSettings.UnlockedForms.Count == 0)
+        {
+            return formType == PlayerFormType.NormalHead || formType == startingForm;
+        }
+
+        return unlockSettings.IsFormUnlocked(formType);
     }
 
     public IPlayerState IdleState => idleState;

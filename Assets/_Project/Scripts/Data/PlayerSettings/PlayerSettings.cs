@@ -8,11 +8,17 @@ public class PlayerSettings : ScriptableObject
     public FishFormSettings fishForm;
     public SuperJumpFormSettings superJumpForm;
 
+    [Header("Input Settings")]
+    public InputSettings inputSettings;
+
     [Header("Interaction Settings")]
     public PlayerInteractionSettings interactionSettings;
 
     [Header("Combat Settings")]
     public PlayerCombatSettings combatSettings;
+
+    [Header("Form Unlock Settings")]
+    public PlayerFormUnlockSettings formUnlockSettings;
 
     public NormalHeadFormSettings GetFormSettings(PlayerFormType formType)
     {

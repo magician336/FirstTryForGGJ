@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   normalHeadForm: {fileID: 11400000, guid: 9dc16a32d85886b43ab7092062846cf1, type: 2}
   fishForm: {fileID: 0}
-  superJumpForm: {fileID: 0}
+  superJumpForm: {fileID: 11400000, guid: 7c74fa08d6aa55f408c158f11aad3b88, type: 2}
+  inputSettings: {fileID: 11400000, guid: 4c0f14c62da7de7489d9de44e298160d, type: 2}
   interactionSettings: {fileID: 0}
   combatSettings: {fileID: 0}
+  formUnlockSettings: {fileID: 11400000, guid: 1ad603ab27740ab45ae11e843132a6d9, type: 2}

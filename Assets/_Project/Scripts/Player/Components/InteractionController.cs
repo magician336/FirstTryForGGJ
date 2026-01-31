@@ -2,10 +2,18 @@ using UnityEngine;
 
 public class InteractionController : MonoBehaviour
 {
-    [Header("交互设置")]
-    public KeyCode interactKey = KeyCode.E;
+    [Header("Input Settings")]
+    [SerializeField] private InputSettings inputSettings;
+
+    public KeyCode InteractKey => inputSettings != null ? inputSettings.InteractKey : KeyCode.F;
+
     public float interactRange = 1.5f;
     public LayerMask interactLayer;
+
+    public void ApplyInputSettings(InputSettings settings)
+    {
+        inputSettings = settings;
+    }
 
     public bool TryInteract()
     {
