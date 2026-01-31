@@ -20,7 +20,8 @@ public abstract class PlayerFormStateFactory
             { PlayerStates.Jump, new PlayerJumpState(controller) },
             { PlayerStates.Fall, new PlayerFallState(controller) },
             { PlayerStates.Interact, new PlayerInteractState(controller) },
-            { PlayerStates.OnLadder, new PlayerOnLadderState(controller) }
+            { PlayerStates.OnLadder, new PlayerOnLadderState(controller) },
+            { PlayerStates.Dead, new PlayerDeadState(controller) }
         };
     }
 }

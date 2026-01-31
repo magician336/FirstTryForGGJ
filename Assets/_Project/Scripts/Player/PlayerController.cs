@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private PlayerPresentationBinder presentationBinder;
     [SerializeField] private PlayerSettings playerSettings;
     [SerializeField] private PlayerFormType startingForm = PlayerFormType.NormalHead;
+    [SerializeField] private HealthController healthController;
 
     private PlayerStateMachine stateMachine;
     private Rigidbody2D body;
@@ -36,6 +37,7 @@ public class PlayerController : MonoBehaviour
     private IPlayerState superJumpState;
     private IPlayerState swingState;
     private IPlayerState onLadderState;
+    private IPlayerState deadState;
 
     private float movementInput;
     private float verticalInput;
@@ -76,6 +78,15 @@ public class PlayerController : MonoBehaviour
         if (swingController == null)
         {
             swingController = GetComponent<SwingController>();
+        }
+
+        if (healthController == null)
+        {
+            healthController = GetComponent<HealthController>();
+        }
+        if (healthController != null)
+        {
+            healthController.OnDie += OnDie_Handler;
         }
 
         ApplySettings();
@@ -213,7 +224,33 @@ public class PlayerController : MonoBehaviour
         // For now, let's assume it might be in the bundle, or we fallback to a new instance.
         onLadderState = bundle.GetStateOrDefault(PlayerStates.OnLadder) ?? new PlayerOnLadderState(this);
 
+        deadState = bundle.GetStateOrDefault(PlayerStates.Dead) ?? new PlayerDeadState(this);
+
         ApplyPresentationForCurrentForm();
+    }
+
+    private void OnDie_Handler()
+    {
+        ChangeState(deadState);
+    }
+
+    public void Teleport(Vector3 position)
+    {
+        transform.position = position;
+        if (body != null)
+        {
+            body.velocity = Vector2.zero;
+        }
+    }
+
+    public void Revive()
+    {
+        // Reset necessary flags
+        ResetSuperJumpCharge();
+
+        // Return to Idle
+        ChangeState(idleState);
+        Debug.Log("Player Revived!");
     }
 
     private void CaptureFallbackInput()

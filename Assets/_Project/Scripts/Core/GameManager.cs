@@ -27,8 +27,11 @@ public class GameManager : MonoBehaviour
     public event Action<Scene> OnLevelLoaded;
     public event Action<PlayerController> OnPlayerSpawned;
     public event Action<int> OnScoreChanged;
+    public event Action OnPlayerDead;
+    public event Action OnPlayerRespawn;
 
     private string _nextSpawnTagOverride = null;
+    private Vector3 currentRespawnPoint;
 
     private void Awake()
     {
@@ -105,12 +108,48 @@ public class GameManager : MonoBehaviour
         _nextSpawnTagOverride = tag;
     }
 
+    public void SetRespawnPoint(Vector3 point)
+    {
+        currentRespawnPoint = point;
+    }
+
+    public void HandlePlayerDeath(HealthController health)
+    {
+        if (IsPaused) return; // Prevent double death if multiple sources hit same frame
+
+        Debug.Log("Player Died!");
+        OnPlayerDead?.Invoke();
+        StartCoroutine(RespawnRoutine(health));
+    }
+
+    private System.Collections.IEnumerator RespawnRoutine(HealthController health)
+    {
+        // 1. Wait for death animation
+        yield return new WaitForSeconds(1.5f);
+
+        // 2. Respawn logic
+        if (Player != null)
+        {
+            Player.Teleport(currentRespawnPoint);
+
+            // Reset health
+            if (health != null) health.ResetHealth();
+
+            // Trigger revive state in PlayerController
+            Player.Revive();
+
+            OnPlayerRespawn?.Invoke();
+        }
+    }
+
     private void SpawnOrFindPlayer()
     {
         var existing = FindObjectOfType<PlayerController>();
         if (existing != null)
         {
             RegisterPlayer(existing);
+            // Initialize respawn point to start position
+            currentRespawnPoint = existing.transform.position;
             return;
         }
 
@@ -132,6 +171,8 @@ public class GameManager : MonoBehaviour
 
         var instance = Instantiate(playerPrefab, spawnPoint != null ? spawnPoint.position : Vector3.zero, Quaternion.identity);
         RegisterPlayer(instance);
+        // Initialize respawn point to spawn position
+        currentRespawnPoint = instance.transform.position;
     }
 
     public void Pause()
