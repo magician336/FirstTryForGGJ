@@ -20,6 +20,8 @@ public class AudioManager : MonoBehaviour
     [SerializeField][Range(0f, 1f)] private float sfxVolume = 1.0f;
     [SerializeField] private int sfxSourcePoolSize = 8;
     [SerializeField] private float defaultSfxPitchVariance = 0.0f; // 例如 0.05f
+    private Dictionary<string, float> _soundCooldowns = new Dictionary<string, float>();
+    [SerializeField] private float minSoundInterval = 0.05f; // 最小间隔 0.05秒
 
     [Header("音频资源 (按键索引)")]
     [SerializeField] private NamedClip[] musicBank = Array.Empty<NamedClip>();
@@ -175,8 +177,31 @@ public class AudioManager : MonoBehaviour
     // 音效接口
     public void PlaySFXByKey(string key, float volumeScale = 1f, float pitchVariance = float.NaN)
     {
-        if (!_sfxDict.TryGetValue(key, out var clip) || clip == null)
+        // [调试] 打印接收到的 Key
+        Debug.Log($"[AudioManager] 尝试播放音效 Key: '{key}'");
+
+        // [新增] 冷却检查
+        if (_soundCooldowns.TryGetValue(key, out float lastTime))
+        {
+            // 如果距离上次播放不到 0.05秒，直接忽略（防止 Update 里疯狂调用造成的“加速/爆音”错觉）
+            if (Time.unscaledTime - lastTime < minSoundInterval) return;
+        }
+        _soundCooldowns[key] = Time.unscaledTime; // 更新时间
+
+        if (!_sfxDict.ContainsKey(key))
+        {
+            Debug.LogError($"[AudioManager] 播放失败！字典中找不到 Key: '{key}'。请检查 AudioManager Inspector 中的 Sfx Bank 配置。");
             return;
+        }
+
+        if (!_sfxDict.TryGetValue(key, out var clip) || clip == null)
+        {
+            Debug.LogError($"[AudioManager] 播放失败！Key: '{key}' 存在，但对应的 AudioClip 为空 (null)。");
+            return;
+        }
+
+        // 如果能走到这里，说明资源没问题
+        Debug.Log($"[AudioManager] Key 验证成功，准备播放 Clip: {clip.name}");
         PlaySFX(clip, volumeScale, pitchVariance);
     }
 

@@ -15,6 +15,7 @@ public class PlayerDeadState : IPlayerState
         player.SetMovementInput(0f);
         player.Move(0f);
         player.SetGravityScale(1f); // Ensure they fall if in air
+        AudioManager.Instance?.PlaySFXByKey("Die");
         // TODO: Play Death Animation via PresentationBinder
     }
 

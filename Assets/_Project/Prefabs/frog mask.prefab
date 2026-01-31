@@ -139,5 +139,5 @@ MonoBehaviour:
   disableAfterUnlock: 1
   unlockVfxPrefab: {fileID: 0}
   vfxOffset: {x: 0, y: 0, z: 0}
-  unlockSfx: {fileID: 0}
+  unlockSfx: {fileID: 8300000, guid: a4317822679b07840a7a29e6a3db2971, type: 3}
   sfxVolume: 1

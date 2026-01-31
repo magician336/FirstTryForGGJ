@@ -17,6 +17,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private string playerSpawnTag = "PlayerSpawn";
     [SerializeField] private bool autoSpawnPlayer = true;
 
+    [Header("游戏流程")]
+    [Tooltip("玩家死亡后等待多久重生（秒），建议设为比死亡音效稍长一点")]
+    [SerializeField] private float respawnDelay = 3.0f;
+
     public bool IsPaused { get; private set; }
     public int Score { get; private set; }
     public PlayerController Player { get; private set; }
@@ -125,8 +129,8 @@ public class GameManager : MonoBehaviour
 
     private System.Collections.IEnumerator RespawnRoutine(HealthController health)
     {
-        // 1. Wait for death animation
-        yield return new WaitForSeconds(1.5f);
+        Debug.Log($"[GameManager] 等待 {respawnDelay} 秒后重生...");
+        yield return new WaitForSeconds(respawnDelay);
 
         // 2. Respawn logic
         Debug.Log($"[GameManager] 正在传送玩家到: {currentRespawnPoint}");
