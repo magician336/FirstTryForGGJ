@@ -6,6 +6,10 @@ public class FishFormSettings : NormalHeadFormSettings
     [Header("Movement Override")]
     [Min(0.1f)] public float swimMoveSpeed = 4f;
 
+    [Header("Water Detection")]
+    [SerializeField] private LayerMask waterLayer;
+    public LayerMask WaterLayer => waterLayer;
+
     [Header("Squid Ink Projectile")]
     public SquidInk squidInkPrefab;
     [Min(0.1f)] public float inkSpeed = 1f;

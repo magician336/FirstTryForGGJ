@@ -111,6 +111,7 @@ public class GameManager : MonoBehaviour
     public void SetRespawnPoint(Vector3 point)
     {
         currentRespawnPoint = point;
+        Debug.Log($"[GameManager] 重生点已更新: {point}");
     }
 
     public void HandlePlayerDeath(HealthController health)
@@ -128,17 +129,32 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(1.5f);
 
         // 2. Respawn logic
-        if (Player != null)
+        Debug.Log($"[GameManager] 正在传送玩家到: {currentRespawnPoint}");
+
+        if (Player == null)
         {
-            Player.Teleport(currentRespawnPoint);
+            Debug.LogError("[GameManager] Player 引用丢失，无法传送！");
+            yield break;
+        }
 
-            // Reset health
-            if (health != null) health.ResetHealth();
+        Player.Teleport(currentRespawnPoint);
 
-            // Trigger revive state in PlayerController
-            Player.Revive();
+        // Reset health
+        if (health != null) health.ResetHealth();
 
-            OnPlayerRespawn?.Invoke();
+        // Trigger revive state in PlayerController
+        Player.Revive();
+
+        OnPlayerRespawn?.Invoke();
+    }
+
+    private void Update()
+    {
+        // 测试：按 R 键强制重生
+        if (Input.GetKeyDown(KeyCode.R) && Player != null)
+        {
+            Debug.Log($"[Test] 强制传送到: {currentRespawnPoint}");
+            Player.transform.position = currentRespawnPoint;
         }
     }
 
@@ -158,6 +174,8 @@ public class GameManager : MonoBehaviour
             return;
         }
         string currentTag = !string.IsNullOrEmpty(_nextSpawnTagOverride) ? _nextSpawnTagOverride : playerSpawnTag;
+
+        Debug.Log("设置出生点");
 
         Transform spawnPoint = null;
         var taggedNodes = GameObject.FindGameObjectsWithTag(currentTag);

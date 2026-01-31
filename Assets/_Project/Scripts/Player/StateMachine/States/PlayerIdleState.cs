@@ -16,6 +16,13 @@ public class PlayerIdleState : IPlayerState
 
     public void HandleInput()
     {
+        // Fish 形态在水中时切换到游泳状态
+        if (player.CanSwim)
+        {
+            player.ChangeState(player.SwimIdleState);
+            return;
+        }
+
         if (player.IsTouchingLadder && Mathf.Abs(player.VerticalInput) > 0.1f)
         {
             player.ChangeState(player.OnLadderState);

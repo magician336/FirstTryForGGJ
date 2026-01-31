@@ -36,6 +36,7 @@ public class DamageZone : MonoBehaviour
         {
             health.TakeDamage(damageAmount);
             PlayFeedback(other.transform.position);
+            Debug.Log("造成伤害");
 
             if (destroyOnHit)
             {

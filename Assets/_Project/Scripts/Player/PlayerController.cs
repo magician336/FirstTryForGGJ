@@ -41,6 +41,8 @@ public class PlayerController : MonoBehaviour
     private IPlayerState swingState;
     private IPlayerState onLadderState;
     private IPlayerState deadState;
+    private IPlayerState swimIdleState;
+    private IPlayerState swimRunState;
 
     private float movementInput;
     private float verticalInput;
@@ -107,6 +109,7 @@ public class PlayerController : MonoBehaviour
         CaptureFallbackInput();
         UpdateGroundState();
         UpdateLadderState();
+        UpdateWaterState();
 
         if (stateMachine?.CurrentState == null)
         {
@@ -229,6 +232,10 @@ public class PlayerController : MonoBehaviour
 
         deadState = bundle.GetStateOrDefault(PlayerStates.Dead) ?? new PlayerDeadState(this);
 
+        // Swim states - only available in Fish form
+        swimIdleState = bundle.GetStateOrDefault(PlayerStates.SwimIdle);
+        swimRunState = bundle.GetStateOrDefault(PlayerStates.SwimRun);
+
         ApplyPresentationForCurrentForm();
     }
 
@@ -316,6 +323,18 @@ public class PlayerController : MonoBehaviour
         if (LadderSettings == null) return;
 
         IsTouchingLadder = Physics2D.OverlapCircle(transform.position, 0.5f, LadderSettings.ladderLayer);
+    }
+
+    private void UpdateWaterState()
+    {
+        var fishSettings = FishSettings;
+        if (fishSettings == null)
+        {
+            IsInWater = false;
+            return;
+        }
+
+        IsInWater = Physics2D.OverlapCircle(transform.position, 0.5f, fishSettings.WaterLayer);
     }
 
     public void MoveVertical(float amount)
@@ -417,14 +436,54 @@ public class PlayerController : MonoBehaviour
     public IPlayerState SuperJumpState => superJumpState;
     public IPlayerState SwingState => swingState;
     public IPlayerState OnLadderState => onLadderState;
+    public IPlayerState SwimIdleState => swimIdleState;
+    public IPlayerState SwimRunState => swimRunState;
 
     public bool IsGrounded => movementController != null && movementController.IsGrounded();
+    public bool IsInWater { get; private set; }
+    public bool CanSwim => currentFormType == PlayerFormType.Fish && IsInWater && swimIdleState != null;
     public float HorizontalInput => movementInput;
     public float VerticalInput => verticalInput;
     public float VerticalVelocity => body != null ? body.velocity.y : 0f;
 
     public PlayerLadderSettings LadderSettings => playerSettings != null ? playerSettings.ladderSettings : null;
+    public FishFormSettings FishSettings => playerSettings != null ? playerSettings.fishForm : null;
     public bool IsTouchingLadder { get; private set; }
+
+    /// <summary>
+    /// 水中移动（水平+垂直）
+    /// </summary>
+    public void Swim(float horizontalInput, float verticalInput)
+    {
+        if (body == null) return;
+
+        var fishSettings = FishSettings;
+        float swimSpeed = fishSettings != null ? fishSettings.swimMoveSpeed : 4f;
+
+        Vector2 swimVelocity = new Vector2(horizontalInput, verticalInput).normalized * swimSpeed;
+        body.velocity = swimVelocity;
+    }
+
+    /// <summary>
+    /// 水中向上冲刺
+    /// </summary>
+    public void SwimUp()
+    {
+        if (body == null) return;
+
+        var fishSettings = FishSettings;
+        float jumpForce = fishSettings != null ? fishSettings.jumpForce : 8f;
+        body.velocity = new Vector2(body.velocity.x, jumpForce * 0.7f);
+    }
+
+    /// <summary>
+    /// 水中阻力效果
+    /// </summary>
+    public void ApplySwimDrag()
+    {
+        if (body == null) return;
+        body.velocity *= 0.95f; // 缓慢减速
+    }
     public bool ConsumeJumpInput()
     {
         if (!jumpRequested)

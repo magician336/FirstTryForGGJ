@@ -11,6 +11,7 @@ public class PlayerDeadState : IPlayerState
 
     public void Enter()
     {
+        Debug.Log("死了");
         player.SetMovementInput(0f);
         player.Move(0f);
         player.SetGravityScale(1f); // Ensure they fall if in air
