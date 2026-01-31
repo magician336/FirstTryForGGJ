@@ -17,11 +17,16 @@ public class InteractionController : MonoBehaviour
 
     public bool TryInteract()
     {
-        Debug.Log($"[Interaction] 尝试在范围 {interactRange} 内进行检测，层级 Mask: {interactLayer.value}");
-        Collider2D hit = Physics2D.OverlapCircle(transform.position, interactRange, interactLayer);
+        Vector2 checkPos = transform.position;
+        Debug.Log($"[Interaction] 按下交互键！位置: {checkPos}, 范围: {interactRange}, 目标层级: {LayerMask.LayerToName(Mathf.RoundToInt(Mathf.Log(interactLayer.value, 2)))} ({interactLayer.value})");
+
+        Collider2D hit = Physics2D.OverlapCircle(checkPos, interactRange, interactLayer);
         if (hit == null)
         {
-            Debug.Log("[Interaction] 未检测到任何碰撞体。");
+            // 如果没扫到，尝试在大一点的范围内扫一下，告诉用户周围有什么
+            Collider2D nearby = Physics2D.OverlapCircle(checkPos, interactRange * 2f);
+            string nearbyTag = nearby != null ? nearby.name : "空";
+            Debug.LogWarning($"[Interaction] 范围内没有匹配层级的物体。提示：检测到最近的物体是 '{nearbyTag}'，请检查该物体是否在正确的 Layer 上。");
             return false;
         }
 

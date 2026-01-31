@@ -34,13 +34,12 @@ public class FrogMask : Interactable
         var player = GameManager.Instance?.Player;
         if (player == null)
         {
-            Debug.LogWarning("[FrogMask] 未找到玩家实例，无法执行 TriggerInteract", this);
+            Debug.LogError("[FrogMask] 未找到 Player 实例！");
             return;
         }
 
-        Debug.Log($"<color=yellow>[FrogMask] 执行解锁逻辑: {targetForm}</color>");
+        Debug.Log($"<color=cyan>[FrogMask] 成功通过 'F' 键触发！形态: {targetForm}</color>");
 
-        // 统一使用 PlayerController 的解锁逻辑，不再依赖本地的 unlockSettings 引用
         if (!player.CheckFormUnlocked(targetForm))
         {
             player.ForceUnlockForm(targetForm);
@@ -60,16 +59,11 @@ public class FrogMask : Interactable
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    protected override void OnDrawGizmos()
     {
-        if (consumed) return;
-
-        // 检测触碰的是否是玩家
-        if (other.CompareTag("Player") || other.GetComponent<PlayerController>() != null)
-        {
-            Debug.Log($"[FrogMask] 触碰检测成功，自动解锁: {targetForm}");
-            TriggerInteract();
-        }
+        // 增加辅助线，在 Scene 窗口能看到物体
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, 0.5f);
     }
 
     private void PlayFeedback()
