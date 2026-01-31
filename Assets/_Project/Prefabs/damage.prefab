@@ -143,7 +143,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5784a792607ab4e4e8bb1444d5d95d53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damageAmount: 1
+  damageAmount: 999
   destroyOnHit: 0
   hitVfxPrefab: {fileID: 0}
   hitSfx: {fileID: 0}

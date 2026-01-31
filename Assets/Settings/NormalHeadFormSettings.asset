@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: NormalHeadFormSettings
   m_EditorClassIdentifier: 
   moveSpeed: 5
-  jumpForce: 10
+  jumpForce: 6.45
   gravityMultiplier: 1
   presentation: {fileID: 0}
