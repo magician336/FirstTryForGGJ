@@ -5,7 +5,7 @@ public class PlayerInputHandler : MonoBehaviour
     [Header("Input Settings")]
     public string horizontalAxis = "Horizontal";
     public KeyCode jumpKey = KeyCode.Space;
-    public KeyCode interactKey = KeyCode.E;
+    public KeyCode interactKey = KeyCode.J;
 
     private PlayerController playerController;
 

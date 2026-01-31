@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 public class SuperJumpFormStateFactory : PlayerFormStateFactory
 {
@@ -18,6 +19,8 @@ public class SuperJumpFormStateFactory : PlayerFormStateFactory
             { PlayerStates.SuperJump, superJumpState },
             { PlayerStates.Fall, new PlayerFallState(controller)}
         };
+
+        Debug.Log("切换超级跳形态");
 
         return new PlayerFormStateBundle(map[PlayerStates.Idle], map);
     }

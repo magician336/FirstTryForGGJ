@@ -3,24 +3,14 @@ using UnityEngine;
 public class GroundChecker : MonoBehaviour
 {
     [Header("地面检测设置")]
-    public Transform groundCheck;
-    public float groundCheckRadius = 0.1f;
+    [SerializeField] private float groundCheckRadius = 0.2f;
+    [SerializeField] private Vector3 groundOffset = new Vector3(0f, -0.5f, 0f);
     public LayerMask groundLayer;
     [SerializeField] private bool ignoreTriggers = true;
 
     private bool isGrounded;
-    private ContactFilter2D _filter;
-    private readonly Collider2D[] _results = new Collider2D[1];
 
     public bool IsGrounded => isGrounded;
-
-    void Awake()
-    {
-        _filter = new ContactFilter2D();
-        _filter.SetLayerMask(groundLayer);
-        _filter.useLayerMask = true;
-        _filter.useTriggers = !ignoreTriggers;
-    }
 
     void FixedUpdate()
     {
@@ -29,23 +19,17 @@ public class GroundChecker : MonoBehaviour
 
     private void CheckGround()
     {
-        if (groundCheck == null)
-        {
-            isGrounded = false;
-            return;
-        }
-
-        // 使用 ContactFilter2D 过滤掉触发器，防止角色碰到透明触发区域也认为接地
-        int hitCount = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, _filter, _results);
-        isGrounded = hitCount > 0;
+        var checkPosition = transform.position + groundOffset;
+        var query = ignoreTriggers ? QueryTriggerInteraction.Ignore : QueryTriggerInteraction.Collide;
+        isGrounded = Physics2D.OverlapCircle(checkPosition, groundCheckRadius, groundLayer);
     }
 
     void OnDrawGizmosSelected()
     {
-        if (groundCheck != null)
-        {
-            Gizmos.color = isGrounded ? Color.green : Color.red;
-            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
-        }
+        Gizmos.color = isGrounded ? Color.green : Color.red;
+        var checkPosition = Application.isPlaying
+            ? transform.position + groundOffset
+            : transform.position + groundOffset;
+        Gizmos.DrawWireSphere(checkPosition, groundCheckRadius);
     }
 }
