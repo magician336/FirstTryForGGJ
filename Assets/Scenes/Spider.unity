@@ -449,11 +449,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3583113567979311828, guid: a4d4aa6dcbcd3414f9cd9a06d599480a, type: 3}
       propertyPath: m_Parameters.widthCurve.m_Curve.Array.data[0].time
-      value: 0.9002075
+      value: 0.10391235
       objectReference: {fileID: 0}
     - target: {fileID: 3583113567979311828, guid: a4d4aa6dcbcd3414f9cd9a06d599480a, type: 3}
       propertyPath: m_Parameters.widthCurve.m_Curve.Array.data[0].value
-      value: 0.8407955
+      value: 0.18560028
       objectReference: {fileID: 0}
     - target: {fileID: 6082758532879519686, guid: a4d4aa6dcbcd3414f9cd9a06d599480a, type: 3}
       propertyPath: m_Name
@@ -578,7 +578,7 @@ Transform:
   m_GameObject: {fileID: 1221445252}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.13, y: -0.28, z: 0}
+  m_LocalPosition: {x: -0.91, y: 4.95, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
