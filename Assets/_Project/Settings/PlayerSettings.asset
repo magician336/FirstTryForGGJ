@@ -14,13 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   normalHeadSkins:
   - {fileID: 11400000, guid: 5607f6b103d284c4b87735926a87586c, type: 2}
+  - {fileID: 11400000, guid: f6ccfa396a922394ab72b3710784201c, type: 2}
+  - {fileID: 11400000, guid: cf24d07116ea2d547a1f312ca655d63d, type: 2}
   fishSkins:
   - {fileID: 11400000, guid: a9ca6c455dd70054580552451b41feb8, type: 2}
+  - {fileID: 11400000, guid: 5bf10b6c8cea16341851c36dad3110a5, type: 2}
   superJumpSkins:
   - {fileID: 11400000, guid: 7c74fa08d6aa55f408c158f11aad3b88, type: 2}
+  - {fileID: 11400000, guid: 78ccf2bf16306674085f74ea55e60d30, type: 2}
   swingSkins:
   - {fileID: 11400000, guid: 559f92765207add49a0f5ad0a23ca6c6, type: 2}
-  - {fileID: 11400000, guid: 559f92765207add49a0f5ad0a23ca6c6, type: 2}
+  - {fileID: 11400000, guid: 2bf744b6828d67647897bad34dd43796, type: 2}
+  - {fileID: 11400000, guid: e064898118c5b7848ae1adb3152035ec, type: 2}
   inputSettings: {fileID: 11400000, guid: 4c0f14c62da7de7489d9de44e298160d, type: 2}
   ladderSettings:
     climbSpeed: 3

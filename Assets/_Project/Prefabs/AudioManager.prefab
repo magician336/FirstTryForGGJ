@@ -79,5 +79,15 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 5e7bc31c2cd6f6e46ad2d246d4720294, type: 3}
   - key: maskshift
     clip: {fileID: 8300000, guid: 423bfe9c629ad5244a875c1287a40773, type: 3}
+  - key: zhexue
+    clip: {fileID: 8300000, guid: 9414fb9752e0cba41aed3f36753454bb, type: 3}
   - key: pickup
     clip: {fileID: 8300000, guid: a4317822679b07840a7a29e6a3db2971, type: 3}
+  - key: beiliya
+    clip: {fileID: 8300000, guid: 4dc2b73517341e84c8821299a82db10f, type: 3}
+  - key: oumu
+    clip: {fileID: 8300000, guid: e4e7638d2f62a714586803a3248b4d47, type: 3}
+  - key: man
+    clip: {fileID: 8300000, guid: b8904214e53123f46bdc6e9afa9e6ae9, type: 3}
+  - key: faerkong
+    clip: {fileID: 8300000, guid: 5b12d0df5f16e62428a990245f3f91b6, type: 3}
