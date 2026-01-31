@@ -9,6 +9,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private MovementController movementController;
     [SerializeField] private GroundChecker groundChecker;
     [SerializeField] private InteractionController interactionController;
+    [SerializeField] private SwingController swingController;
     [SerializeField] private PlayerPresentationBinder presentationBinder;
     [SerializeField] private PlayerSettings playerSettings;
     [SerializeField] private PlayerFormType startingForm = PlayerFormType.NormalHead;
@@ -33,8 +34,10 @@ public class PlayerController : MonoBehaviour
     private IPlayerState fallState;
     private IPlayerState interactState;
     private IPlayerState superJumpState;
+    private IPlayerState swingState;
 
     private float movementInput;
+    private float verticalInput;
     private bool jumpRequested;
     private bool interactRequested;
     private bool isChargingSuperJump;
@@ -67,6 +70,11 @@ public class PlayerController : MonoBehaviour
         if (presentationBinder == null)
         {
             presentationBinder = GetComponentInChildren<PlayerPresentationBinder>();
+        }
+
+        if (swingController == null)
+        {
+            swingController = GetComponent<SwingController>();
         }
 
         ApplySettings();
@@ -120,6 +128,7 @@ public class PlayerController : MonoBehaviour
             cachedInputHandler.interactKey = GetInteractKey();
             cachedInputHandler.nextFormKey = GetNextFormKey();
             cachedInputHandler.previousFormKey = GetPreviousFormKey();
+            cachedInputHandler.swingKey = GetSwingKey();
         }
     }
 
@@ -195,6 +204,7 @@ public class PlayerController : MonoBehaviour
         fallState = bundle.GetStateOrDefault(PlayerStates.Fall);
         interactState = bundle.GetStateOrDefault(PlayerStates.Interact);
         superJumpState = bundle.GetStateOrDefault(PlayerStates.SuperJump);
+        swingState = bundle.GetStateOrDefault(PlayerStates.Swing);
 
         ApplyPresentationForCurrentForm();
     }
@@ -207,6 +217,7 @@ public class PlayerController : MonoBehaviour
         }
 
         SetMovementInput(Input.GetAxisRaw("Horizontal"));
+        SetVerticalInput(Input.GetAxisRaw("Vertical"));
 
         var jumpKey = GetJumpKey();
         if (Input.GetKeyDown(jumpKey))
@@ -238,6 +249,11 @@ public class PlayerController : MonoBehaviour
         {
             RequestPreviousForm();
         }
+
+        if (Input.GetKeyDown(GetSwingKey()))
+        {
+            OnSwingButtonDown();
+        }
     }
 
     private void UpdateGroundState()
@@ -251,6 +267,11 @@ public class PlayerController : MonoBehaviour
     public void SetMovementInput(float value)
     {
         movementInput = Mathf.Clamp(value, -1f, 1f);
+    }
+
+    public void SetVerticalInput(float value)
+    {
+        verticalInput = Mathf.Clamp(value, -1f, 1f);
     }
 
     public void QueueJumpInput()
@@ -294,6 +315,32 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void OnSwingButtonDown()
+    {
+        if (swingController == null) return;
+
+        bool isSwinging = stateMachine.CurrentState == swingState;
+
+        if (isSwinging)
+        {
+            // Exit swing
+            ChangeState(idleState);
+        }
+        else
+        {
+            // Enter swing
+            // Use movementInput as direction, or fallback to transform scale/logic if needed to know facing direction
+            // For now, assuming HorizontalInput determines facing, or defaulting to right
+            float dir = HorizontalInput;
+            if (Mathf.Abs(dir) < 0.01f) dir = 1f; // Default Right
+
+            if (swingController.TryStartSwing(dir))
+            {
+                ChangeState(swingState);
+            }
+        }
+    }
+
     // Backwards compatibility for existing callers
     public void TryJump() => QueueJumpInput();
     public void TryInteract() => QueueInteractInput();
@@ -301,6 +348,7 @@ public class PlayerController : MonoBehaviour
     public void RequestPreviousForm() => CycleForm(-1);
 
     public float HorizontalInput => movementInput;
+    public float VerticalInput => verticalInput;
 
     public bool ConsumeJumpInput()
     {
@@ -450,6 +498,12 @@ public class PlayerController : MonoBehaviour
     {
         var inputSettings = InputSettingsAsset;
         return inputSettings != null ? inputSettings.PreviousFormKey : KeyCode.Q;
+    }
+
+    private KeyCode GetSwingKey()
+    {
+        var inputSettings = InputSettingsAsset;
+        return inputSettings != null ? inputSettings.SwingKey : KeyCode.J;
     }
 
     private bool IsInGroundedLocomotionState()
@@ -730,4 +784,5 @@ public class PlayerController : MonoBehaviour
     public int CurrentHealth => currentHealth;
     public int MaxHealth => GetMaxHealth();
     public int AttackPower => GetAttackPower();
+    public PlayerSettings Settings => playerSettings;
 }

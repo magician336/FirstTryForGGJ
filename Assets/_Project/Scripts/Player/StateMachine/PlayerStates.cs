@@ -2,5 +2,6 @@ public enum PlayerStates
 {
     Idle, Run,
     Jump, Interact,
-    Fall, SuperJump
+    Fall, SuperJump,
+    Swing
 };

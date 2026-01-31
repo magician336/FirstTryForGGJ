@@ -7,6 +7,7 @@ public class PlayerSettings : ScriptableObject
     public NormalHeadFormSettings normalHeadForm;
     public FishFormSettings fishForm;
     public SuperJumpFormSettings superJumpForm;
+    public SwingFormSettings swingForm;
 
     [Header("Input Settings")]
     public InputSettings inputSettings;
@@ -27,6 +28,7 @@ public class PlayerSettings : ScriptableObject
             PlayerFormType.NormalHead => normalHeadForm,
             PlayerFormType.Fish => fishForm,
             PlayerFormType.SuperJump => superJumpForm,
+            PlayerFormType.Spider => swingForm,
             _ => normalHeadForm
         };
     }
