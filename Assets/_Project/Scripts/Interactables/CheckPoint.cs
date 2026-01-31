@@ -7,8 +7,9 @@ public class CheckPoint : MonoBehaviour
     {
         if (other.CompareTag("Player") && GameManager.Instance != null)
         {
-            GameManager.Instance.SetRespawnPoint(transform.position);
-            Debug.Log($"Checkpoint reached: {transform.position}");
+            Vector3 respawnPos = transform.position;
+            Debug.Log($"[CheckPoint] 设置重生点: {respawnPos}");
+            GameManager.Instance.SetRespawnPoint(respawnPos);
             // TODO: Play effect/sound
         }
     }

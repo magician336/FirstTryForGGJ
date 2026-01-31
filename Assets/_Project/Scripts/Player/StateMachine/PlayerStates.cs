@@ -4,5 +4,6 @@ public enum PlayerStates
     Jump, Interact,
     Fall, SuperJump,
     Swing, OnLadder,
-    Dead
+    Dead, SwimIdle,
+    SwimRun
 };
