@@ -186,6 +186,7 @@ public class PlayerController : MonoBehaviour
 
         currentFormFactory = factory;
         currentFormType = newForm;
+        Debug.Log($"[FormSwitch] 正在切换到形态: {newForm}");
 
         if (newForm != PlayerFormType.SuperJump)
         {
@@ -399,6 +400,13 @@ public class PlayerController : MonoBehaviour
     public void OnSwingButtonDown()
     {
         if (swingController == null) return;
+
+        // 如果当前形态没有 swingState（即不是蜘蛛形态），则不允许触发
+        if (swingState == null)
+        {
+            Debug.Log("[Player] 当前形态无法开启摆荡（仅限蜘蛛形态）。");
+            return;
+        }
 
         bool isSwinging = stateMachine.CurrentState == swingState;
 
