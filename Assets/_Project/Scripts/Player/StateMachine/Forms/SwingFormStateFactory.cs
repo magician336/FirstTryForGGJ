@@ -17,7 +17,6 @@ public class SwingFormStateFactory : PlayerFormStateFactory
         Debug.Log("Swing (Spider) 形态：状态映射已构建完成。");
 
         // 3. 返回以 Idle 为起始状态的包
-        Debug.Log("CreateStateBundle");
         return new PlayerFormStateBundle(map[PlayerStates.Idle], map);
     }
 

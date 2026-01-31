@@ -186,6 +186,7 @@ public class PlayerController : MonoBehaviour
 
         currentFormFactory = factory;
         currentFormType = newForm;
+        Debug.Log($"[FormSwitch] 正在切换到形态: {newForm}");
 
         if (newForm != PlayerFormType.SuperJump)
         {
@@ -334,7 +335,26 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
+        bool wasInWater = IsInWater;
         IsInWater = Physics2D.OverlapCircle(transform.position, 0.5f, fishSettings.WaterLayer);
+
+        if (IsInWater)
+        {
+            // 在水中时关闭重力，防止下沉
+            SetGravityScale(0f);
+
+            // 如果刚进入水域且是鱼形态，强制切换到游泳状态
+            if (!wasInWater && CanSwim)
+            {
+                Debug.Log("[Player] 进入水域，切换至游泳状态");
+                ChangeState(swimIdleState);
+            }
+        }
+        else if (wasInWater)
+        {
+            // 离开水域，恢复基础重力
+            SetGravityScale(baseGravityScale);
+        }
     }
 
     public void MoveVertical(float amount)
@@ -366,7 +386,20 @@ public class PlayerController : MonoBehaviour
 
     public void QueueInteractInput()
     {
+        Debug.Log("[PlayerController] 交互键按下，设置 interactRequested = true");
         interactRequested = true;
+    }
+
+    public bool ConsumeInteractInput()
+    {
+        if (!interactRequested)
+        {
+            return false;
+        }
+
+        Debug.Log("[PlayerController] 正在消耗交互输入");
+        interactRequested = false;
+        return true;
     }
 
     public void OnJumpButtonDown()
@@ -374,6 +407,13 @@ public class PlayerController : MonoBehaviour
         if (IsSuperJumpFormActive())
         {
             BeginSuperJumpCharge();
+            return;
+        }
+
+        // 如果处于可以游泳的状态（鱼形态+在水中），按下跳跃键向上冲刺
+        if (CanSwim)
+        {
+            SwimUp();
             return;
         }
 
@@ -399,6 +439,13 @@ public class PlayerController : MonoBehaviour
     public void OnSwingButtonDown()
     {
         if (swingController == null) return;
+
+        // 如果当前形态没有 swingState（即不是蜘蛛形态），则不允许触发
+        if (swingState == null)
+        {
+            Debug.Log("[Player] 当前形态无法开启摆荡（仅限蜘蛛形态）。");
+            return;
+        }
 
         bool isSwinging = stateMachine.CurrentState == swingState;
 
@@ -495,16 +542,6 @@ public class PlayerController : MonoBehaviour
         return true;
     }
 
-    public bool ConsumeInteractInput()
-    {
-        if (!interactRequested)
-        {
-            return false;
-        }
-
-        interactRequested = false;
-        return true;
-    }
 
     public void Move(float normalizedInput)
     {

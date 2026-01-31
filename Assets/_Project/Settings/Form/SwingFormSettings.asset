@@ -17,8 +17,8 @@ MonoBehaviour:
   gravityMultiplier: 1
   presentation: {fileID: 11400000, guid: 52e8e2eb46545d34c8d5d253fbad8f0c, type: 2}
   maxWebDistance: 10
-  climbSpeed: 3
-  swingForce: 15
+  climbSpeed: 5
+  swingForce: 20
   grappleLayer:
     serializedVersion: 2
     m_Bits: 512
