@@ -9,10 +9,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 31a3811f5d201504c91f037cdf86e4f8, type: 3}
-  m_Name: NormalHeadFormSettings
+  m_Script: {fileID: 11500000, guid: c728b06e41846f845b1ee6fdc2bc7f35, type: 3}
+  m_Name: SwingFormSettings
   m_EditorClassIdentifier: 
   moveSpeed: 5
   jumpForce: 10
   gravityMultiplier: 1
-  presentation: {fileID: 11400000, guid: 7eefe7c80629e674ab34f8474e56e272, type: 2}
+  presentation: {fileID: 0}
+  maxWebDistance: 10
+  climbSpeed: 3
+  swingForce: 15
+  grappleLayer:
+    serializedVersion: 2
+    m_Bits: 0

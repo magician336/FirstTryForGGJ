@@ -2,21 +2,20 @@ using UnityEngine;
 
 /// <summary>
 /// 统一的场景跳转触发器。
-/// 支持“走进区域自动跳转”或“在区域内按交互键跳转”。
+/// 支持“在同一大场景中切换摄像机与玩家位置”的跳转逻辑。
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 public class SceneTransitionTrigger : MonoBehaviour
 {
-    [Header("跳转配置")]
-    [Tooltip("目标场景的字符串名称（必须已在 Build Settings 中添加）")]
-    [SerializeField] private string targetSceneName;
+    [Header("大场景跳转配置")]
+    [Tooltip("摄像机要移动到的目标点")]
+    [SerializeField] private Transform cameraTargetMarker;
 
-    [Tooltip("是否为自动触发（走进区域即跳转）。如果不勾选，则需要走进区域并按下交互键。")]
+    [Tooltip("玩家要传送到的目标点")]
+    [SerializeField] private Transform playerSpawnMarker;
+
     [SerializeField] private bool isAutomatic = true;
-
-    [Header("出生点配置 (可选)")]
-    [Tooltip("跳转到新场景后，玩家应该在哪个 Tag 处生成。如果不填，则使用 GameManager 默认配置。")]
-    [SerializeField] private string targetSpawnTag = "";
+    [SerializeField] private bool instantCameraMove = false;
 
     private bool _isPlayerInZone = false;
 
@@ -34,15 +33,8 @@ public class SceneTransitionTrigger : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            if (isAutomatic)
-            {
-                DoTransition();
-            }
-            else
-            {
-                _isPlayerInZone = true;
-                // 这里可以扩展显示“按 F [交互]”的提示 UI
-            }
+            if (isAutomatic) DoTransition();
+            else _isPlayerInZone = true;
         }
     }
 
@@ -56,41 +48,33 @@ public class SceneTransitionTrigger : MonoBehaviour
 
     private void Update()
     {
-        // 如果不是自动触发，且玩家在区域内，检测交互键
-        if (!isAutomatic && _isPlayerInZone)
+        if (!isAutomatic && _isPlayerInZone && Input.GetKeyDown(KeyCode.F))
         {
-            // 这里我们手动检测按键，默认遵循 InteractionController 的 F 键
-            // 以后可以重构为从统一输入设置中获取
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                DoTransition();
-            }
+            DoTransition();
         }
     }
 
     private void DoTransition()
     {
-        if (string.IsNullOrEmpty(targetSceneName))
+        // 1. 移动摄像机
+        if (cameraTargetMarker != null && CameraManager.Instance != null)
         {
-            Debug.LogWarning($"[SceneTransitionTrigger] 目标场景为空: {gameObject.name}");
-            return;
+            CameraManager.Instance.TransitionTo(cameraTargetMarker.position, instantCameraMove);
         }
 
-        // 如果设置了特定的出生点 Tag，将其告知 GameManager
-        if (!string.IsNullOrEmpty(targetSpawnTag) && GameManager.Instance != null)
+        // 2. 传送玩家到新区域
+        if (playerSpawnMarker != null && GameManager.Instance != null)
         {
-            GameManager.Instance.SetNextSpawnTag(targetSpawnTag);
+            var player = GameManager.Instance.Player;
+            if (player != null)
+            {
+                // 注意：如果传送后需要立即改变重生点，可以顺便调用 SetRespawnPoint
+                player.transform.position = playerSpawnMarker.position;
+                GameManager.Instance.SetRespawnPoint(playerSpawnMarker.position);
+            }
         }
 
-        if (SceneManager.Instance != null)
-        {
-            SceneManager.Instance.LoadScene(targetSceneName);
-        }
-        else
-        {
-            // 如果场景中没有 SceneManager，回退到原生加载
-            UnityEngine.SceneManagement.SceneManager.LoadScene(targetSceneName);
-        }
+        Debug.Log($"[Transition] 已切换至新区域: {gameObject.name}");
     }
 
     private void OnDrawGizmos()
@@ -105,6 +89,21 @@ public class SceneTransitionTrigger : MonoBehaviour
         else
         {
             Gizmos.DrawSphere(transform.position, 0.5f);
+        }
+
+        // 绘制连线到目标点，方便视觉化跳转关系
+        if (cameraTargetMarker != null)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawLine(transform.position, cameraTargetMarker.position);
+            Gizmos.DrawWireSphere(cameraTargetMarker.position, 0.5f);
+        }
+
+        if (playerSpawnMarker != null)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(transform.position, playerSpawnMarker.position);
+            Gizmos.DrawWireSphere(playerSpawnMarker.position, 0.4f);
         }
     }
 }

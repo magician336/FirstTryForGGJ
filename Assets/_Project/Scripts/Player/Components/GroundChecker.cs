@@ -14,6 +14,7 @@ public class GroundChecker : MonoBehaviour
 
     void FixedUpdate()
     {
+
         CheckGround();
     }
 
