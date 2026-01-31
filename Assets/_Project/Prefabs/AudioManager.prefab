@@ -52,4 +52,12 @@ MonoBehaviour:
   sfxSourcePoolSize: 8
   defaultSfxPitchVariance: 0
   musicBank: []
-  sfxBank: []
+  sfxBank:
+  - key: Die
+    clip: {fileID: 8300000, guid: 2df221048d3b41340accc4052670b630, type: 3}
+  - key: Die
+    clip: {fileID: 8300000, guid: f9599b0dbee0c254e8ee30d0bf5801e7, type: 3}
+  - key: rebirth
+    clip: {fileID: 8300000, guid: 25901e5ed1ab9b0429b334411151b11a, type: 3}
+  - key: chuansong
+    clip: {fileID: 8300000, guid: 25901e5ed1ab9b0429b334411151b11a, type: 3}
