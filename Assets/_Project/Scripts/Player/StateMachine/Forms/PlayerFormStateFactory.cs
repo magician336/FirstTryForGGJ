@@ -39,6 +39,7 @@ public static class PlayerFormFactoryRegistry
                 PlayerFormType.NormalHead => new NormalHeadFormStateFactory(),
                 PlayerFormType.SuperJump => new SuperJumpFormStateFactory(),
                 PlayerFormType.Fish => new FishFormStateFactory(),
+                PlayerFormType.Spider => new SwingFormStateFactory(),
                 _ => null
             };
 
