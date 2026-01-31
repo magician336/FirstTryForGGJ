@@ -12,6 +12,9 @@ public class PlayerSettings : ScriptableObject
     [Header("Input Settings")]
     public InputSettings inputSettings;
 
+    [Header("Ladder Settings")]
+    public PlayerLadderSettings ladderSettings;
+
     [Header("Interaction Settings")]
     public PlayerInteractionSettings interactionSettings;
 

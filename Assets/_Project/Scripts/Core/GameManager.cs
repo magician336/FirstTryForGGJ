@@ -28,6 +28,8 @@ public class GameManager : MonoBehaviour
     public event Action<PlayerController> OnPlayerSpawned;
     public event Action<int> OnScoreChanged;
 
+    private string _nextSpawnTagOverride = null;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -54,7 +56,14 @@ public class GameManager : MonoBehaviour
     {
         if (loadStartingSceneOnStart && !string.IsNullOrWhiteSpace(startingSceneName))
         {
-            UnityEngine.SceneManagement.SceneManager.LoadScene(startingSceneName);
+            if (SceneManager.Instance != null)
+            {
+                SceneManager.Instance.LoadScene(startingSceneName);
+            }
+            else
+            {
+                UnityEngine.SceneManagement.SceneManager.LoadScene(startingSceneName);
+            }
             return;
         }
 
@@ -91,6 +100,11 @@ public class GameManager : MonoBehaviour
         OnPlayerSpawned?.Invoke(Player);
     }
 
+    public void SetNextSpawnTag(string tag)
+    {
+        _nextSpawnTagOverride = tag;
+    }
+
     private void SpawnOrFindPlayer()
     {
         var existing = FindObjectOfType<PlayerController>();
@@ -104,13 +118,17 @@ public class GameManager : MonoBehaviour
         {
             return;
         }
+        string currentTag = !string.IsNullOrEmpty(_nextSpawnTagOverride) ? _nextSpawnTagOverride : playerSpawnTag;
 
         Transform spawnPoint = null;
-        var tagged = GameObject.FindGameObjectWithTag(playerSpawnTag);
-        if (tagged != null)
+        var taggedNodes = GameObject.FindGameObjectsWithTag(currentTag);
+        if (taggedNodes.Length > 0)
         {
-            spawnPoint = tagged.transform;
+            spawnPoint = taggedNodes[0].transform;
         }
+
+        // 清除覆盖，以便下次使用默认值或重新设置
+        _nextSpawnTagOverride = null;
 
         var instance = Instantiate(playerPrefab, spawnPoint != null ? spawnPoint.position : Vector3.zero, Quaternion.identity);
         RegisterPlayer(instance);
@@ -139,24 +157,29 @@ public class GameManager : MonoBehaviour
 
     public void RestartLevel()
     {
-        var idx = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex;
-        UnityEngine.SceneManagement.SceneManager.LoadScene(idx);
-    }
-
-    public void LoadNextLevel()
-    {
-        var idx = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex + 1;
-        if (idx < UnityEngine.SceneManagement.SceneManager.sceneCountInBuildSettings)
+        if (SceneManager.Instance != null)
         {
+            SceneManager.Instance.ReloadCurrent();
+        }
+        else
+        {
+            var idx = UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex;
             UnityEngine.SceneManagement.SceneManager.LoadScene(idx);
         }
     }
 
     public void LoadLevelByName(string sceneName)
     {
-        if (!string.IsNullOrWhiteSpace(sceneName))
+        if (SceneManager.Instance != null)
         {
-            UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
+            SceneManager.Instance.LoadScene(sceneName);
+        }
+        else
+        {
+            if (!string.IsNullOrWhiteSpace(sceneName))
+            {
+                UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
+            }
         }
     }
 

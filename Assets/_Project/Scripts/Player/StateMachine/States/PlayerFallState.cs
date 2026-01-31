@@ -15,6 +15,12 @@ public class PlayerFallState : IPlayerState
 
     public void HandleInput()
     {
+        if (player.IsTouchingLadder && Mathf.Abs(player.VerticalInput) > 0.1f)
+        {
+            player.ChangeState(player.OnLadderState);
+            return;
+        }
+
         if (player.ConsumeInteractInput())
         {
             player.ChangeState(player.InteractState);

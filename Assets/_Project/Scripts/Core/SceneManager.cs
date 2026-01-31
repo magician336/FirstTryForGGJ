@@ -8,7 +8,6 @@ public class SceneManager : MonoBehaviour
 
     [Header("Scene Names")]
     [SerializeField] private string mainMenuScene = "MainMenu";
-    [SerializeField] private string levelSelectScene = "LevelSelect";
     [SerializeField] private string gameplayScene = "Gameplay";
     [SerializeField] private string settingsScene = "Settings";
 
@@ -35,9 +34,12 @@ public class SceneManager : MonoBehaviour
     }
 
     public void LoadMainMenu() => LoadScene(mainMenuScene);
-    public void LoadLevelSelect() => LoadScene(levelSelectScene);
     public void LoadGameplay() => LoadScene(gameplayScene);
     public void LoadSettings() => LoadScene(settingsScene);
+
+    /// <summary>
+    /// 重新加载当前场景
+    /// </summary>
     public void ReloadCurrent() => LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
 
     public void LoadScene(SceneType type)
@@ -47,9 +49,6 @@ public class SceneManager : MonoBehaviour
             case SceneType.MainMenu:
                 LoadMainMenu();
                 break;
-            case SceneType.LevelSelect:
-                LoadLevelSelect();
-                break;
             case SceneType.Gameplay:
                 LoadGameplay();
                 break;
@@ -58,7 +57,6 @@ public class SceneManager : MonoBehaviour
                 break;
         }
     }
-
     public void LoadScene(string sceneName)
     {
         if (string.IsNullOrWhiteSpace(sceneName))

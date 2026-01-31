@@ -3,5 +3,6 @@ public enum PlayerStates
     Idle, Run,
     Jump, Interact,
     Fall, SuperJump,
-    Swing
+    Swing, OnLadder
+
 };

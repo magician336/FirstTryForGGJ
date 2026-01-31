@@ -35,6 +35,7 @@ public class PlayerController : MonoBehaviour
     private IPlayerState interactState;
     private IPlayerState superJumpState;
     private IPlayerState swingState;
+    private IPlayerState onLadderState;
 
     private float movementInput;
     private float verticalInput;
@@ -91,6 +92,7 @@ public class PlayerController : MonoBehaviour
     {
         CaptureFallbackInput();
         UpdateGroundState();
+        UpdateLadderState();
 
         if (stateMachine?.CurrentState == null)
         {
@@ -206,6 +208,11 @@ public class PlayerController : MonoBehaviour
         superJumpState = bundle.GetStateOrDefault(PlayerStates.SuperJump);
         swingState = bundle.GetStateOrDefault(PlayerStates.Swing);
 
+        // OnLadder is a shared state, usually not in the bundle specific to a form, 
+        // but we can look for it or create a default instance if missing.
+        // For now, let's assume it might be in the bundle, or we fallback to a new instance.
+        onLadderState = bundle.GetStateOrDefault(PlayerStates.OnLadder) ?? new PlayerOnLadderState(this);
+
         ApplyPresentationForCurrentForm();
     }
 
@@ -262,6 +269,21 @@ public class PlayerController : MonoBehaviour
         {
             movementController.SetGrounded(groundChecker.IsGrounded);
         }
+    }
+
+    private void UpdateLadderState()
+    {
+        if (LadderSettings == null) return;
+
+        IsTouchingLadder = Physics2D.OverlapCircle(transform.position, 0.5f, LadderSettings.ladderLayer);
+    }
+
+    public void MoveVertical(float amount)
+    {
+        if (body == null || LadderSettings == null) return;
+
+        float targetVelocityY = amount * LadderSettings.climbSpeed;
+        body.velocity = new Vector2(0f, targetVelocityY);
     }
 
     public void SetMovementInput(float value)
@@ -347,9 +369,22 @@ public class PlayerController : MonoBehaviour
     public void RequestNextForm() => CycleForm(1);
     public void RequestPreviousForm() => CycleForm(-1);
 
+    public IPlayerState IdleState => idleState;
+    public IPlayerState RunState => runState;
+    public IPlayerState JumpState => jumpState;
+    public IPlayerState FallState => fallState;
+    public IPlayerState InteractState => interactState;
+    public IPlayerState SuperJumpState => superJumpState;
+    public IPlayerState SwingState => swingState;
+    public IPlayerState OnLadderState => onLadderState;
+
+    public bool IsGrounded => movementController != null && movementController.IsGrounded();
     public float HorizontalInput => movementInput;
     public float VerticalInput => verticalInput;
+    public float VerticalVelocity => body != null ? body.velocity.y : 0f;
 
+    public PlayerLadderSettings LadderSettings => playerSettings != null ? playerSettings.ladderSettings : null;
+    public bool IsTouchingLadder { get; private set; }
     public bool ConsumeJumpInput()
     {
         if (!jumpRequested)
@@ -371,10 +406,6 @@ public class PlayerController : MonoBehaviour
         interactRequested = false;
         return true;
     }
-
-    public bool IsGrounded => groundChecker != null && groundChecker.IsGrounded;
-
-    public float VerticalVelocity => body != null ? body.velocity.y : 0f;
 
     public void Move(float normalizedInput)
     {
@@ -718,71 +749,77 @@ public class PlayerController : MonoBehaviour
         var targetIndex = (currentIndex + direction) % forms.Count;
         if (targetIndex < 0)
         {
-            targetIndex += forms.Count;
+            targetIndex = forms.Count - 1;
         }
 
         var targetForm = forms[targetIndex];
-        if (targetForm == currentFormType)
+        SwitchForm(targetForm);
+    }
+
+    private bool IsFormUnlocked(PlayerFormType formType)
+    {
+        if (formType == PlayerFormType.NormalHead)
         {
-            return;
+            return true;
         }
 
-        SwitchForm(targetForm);
+        if (FormUnlockSettings == null)
+        {
+            return false;
+        }
+
+        return FormUnlockSettings.IsFormUnlocked(formType);
     }
 
     private List<PlayerFormType> GetUnlockedFormsBuffer()
     {
         unlockedFormBuffer.Clear();
 
-        var unlockSettings = FormUnlockSettings;
-        if (unlockSettings != null && unlockSettings.UnlockedForms != null)
+        if (FormUnlockSettings == null)
         {
-            foreach (var form in unlockSettings.UnlockedForms)
-            {
-                if (!unlockedFormBuffer.Contains(form))
-                {
-                    unlockedFormBuffer.Add(form);
-                }
-            }
+            return unlockedFormBuffer;
         }
 
-        if (unlockedFormBuffer.Count == 0)
-        {
-            unlockedFormBuffer.Add(PlayerFormType.NormalHead);
-        }
-
-        if (!unlockedFormBuffer.Contains(startingForm))
-        {
-            unlockedFormBuffer.Add(startingForm);
-        }
-
-        if (!unlockedFormBuffer.Contains(currentFormType))
-        {
-            unlockedFormBuffer.Add(currentFormType);
-        }
+        unlockedFormBuffer.AddRange(FormUnlockSettings.UnlockedForms);
 
         return unlockedFormBuffer;
     }
 
-    private bool IsFormUnlocked(PlayerFormType formType)
+    public void ForceUnlockForm(PlayerFormType formType)
     {
-        var unlockSettings = FormUnlockSettings;
-        if (unlockSettings == null || unlockSettings.UnlockedForms == null || unlockSettings.UnlockedForms.Count == 0)
+        if (FormUnlockSettings == null)
         {
-            return formType == PlayerFormType.NormalHead || formType == startingForm;
+            return;
         }
 
-        return unlockSettings.IsFormUnlocked(formType);
+        FormUnlockSettings.EnsureUnlocked(formType);
+        Debug.Log($"Form {formType} unlocked!");
+
+        // Optional: Refresh buffer immediately if cached locally, but we clear it in GetUnlockedFormsBuffer anyway.
     }
 
-    public IPlayerState IdleState => idleState;
-    public IPlayerState RunState => runState;
-    public IPlayerState JumpState => jumpState;
-    public IPlayerState FallState => fallState;
-    public IPlayerState InteractState => interactState;
-    public IPlayerState SuperJumpState => superJumpState;
-    public int CurrentHealth => currentHealth;
-    public int MaxHealth => GetMaxHealth();
-    public int AttackPower => GetAttackPower();
-    public PlayerSettings Settings => playerSettings;
+    public void DebugDumpState()
+    {
+        Debug.Log($"[PlayerController] Current Form: {currentFormType}, State: {stateMachine?.CurrentState?.GetState()}");
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (LadderSettings != null)
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawWireSphere(transform.position, 0.5f);
+        }
+    }
+
+    public void JumpOffLadder()
+    {
+        if (body == null || LadderSettings == null) return;
+        body.velocity = new Vector2(body.velocity.x, LadderSettings.ladderJumpForce);
+    }
+    public void SetGravityScale(float scale)
+    {
+        body.gravityScale = scale;
+    }
 }
+
