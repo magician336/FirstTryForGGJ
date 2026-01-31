@@ -944,6 +944,7 @@ public class PlayerController : MonoBehaviour
 
     private void CycleForm(int direction)
     {
+        Debug.Log("CycleForm");
         var forms = GetUnlockedFormsBuffer();
         if (forms.Count <= 1)
         {
@@ -975,22 +976,42 @@ public class PlayerController : MonoBehaviour
 
         if (FormUnlockSettings == null)
         {
+            Debug.LogWarning("[PlayerController] FormUnlockSettings 为空，无法检查解锁状态。");
             return false;
         }
 
         return FormUnlockSettings.IsFormUnlocked(formType);
     }
 
+    // 将 IsFormUnlocked 暴露给公共访问
+    public bool CheckFormUnlocked(PlayerFormType formType) => IsFormUnlocked(formType);
+
     private List<PlayerFormType> GetUnlockedFormsBuffer()
     {
         unlockedFormBuffer.Clear();
 
-        if (FormUnlockSettings == null)
+        // 1. 基础形态永远默认解锁并放在首位
+        unlockedFormBuffer.Add(PlayerFormType.NormalHead);
+
+        // 2. 从配置中读取其他已解锁形态
+        if (FormUnlockSettings != null)
         {
-            return unlockedFormBuffer;
+            foreach (var form in FormUnlockSettings.UnlockedForms)
+            {
+                if (form != PlayerFormType.NormalHead && !unlockedFormBuffer.Contains(form))
+                {
+                    unlockedFormBuffer.Add(form);
+                }
+            }
         }
 
-        unlockedFormBuffer.AddRange(FormUnlockSettings.UnlockedForms);
+        // 3. 详细日志，方便调试看清具体内容
+        if (unlockedFormBuffer.Count > 0)
+        {
+            string log = "[PlayerController] 当前已解锁形态列表: ";
+            foreach (var f in unlockedFormBuffer) log += f.ToString() + ", ";
+            Debug.Log(log.TrimEnd(' ', ','));
+        }
 
         return unlockedFormBuffer;
     }
@@ -999,13 +1020,16 @@ public class PlayerController : MonoBehaviour
     {
         if (FormUnlockSettings == null)
         {
+            Debug.LogError("[PlayerController] 无法解锁形态：PlayerSettings 中未分配 FormUnlockSettings 资源！");
             return;
         }
 
+        Debug.Log($"[PlayerController] 正在修改解锁清单资产: <color=cyan>{FormUnlockSettings.name}</color>");
         FormUnlockSettings.EnsureUnlocked(formType);
-        Debug.Log($"Form {formType} unlocked!");
+        Debug.Log($"<color=green>[PlayerController] 强制解锁形态成功: {formType}</color>");
 
-        // Optional: Refresh buffer immediately if cached locally, but we clear it in GetUnlockedFormsBuffer anyway.
+        // 立即刷新一次缓冲区
+        GetUnlockedFormsBuffer();
     }
 
     public void DebugDumpState()

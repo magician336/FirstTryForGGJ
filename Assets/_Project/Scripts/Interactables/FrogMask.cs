@@ -29,29 +29,21 @@ public class FrogMask : Interactable
 
     public override void TriggerInteract()
     {
-	Debug.Log("triggered");
-        if (consumed)
-        {
-            return;
-        }
-
-        if (unlockSettings == null)
-        {
-            Debug.LogWarning("FrogMask 缺少 unlockSettings 引用", this);
-            return;
-        }
+        if (consumed) return;
 
         var player = GameManager.Instance?.Player;
         if (player == null)
         {
-            Debug.LogWarning("未找到玩家实例，无法解锁形态", this);
+            Debug.LogWarning("[FrogMask] 未找到玩家实例，无法执行 TriggerInteract", this);
             return;
         }
 
-        if (!unlockSettings.IsFormUnlocked(targetForm))
+        Debug.Log($"<color=yellow>[FrogMask] 执行解锁逻辑: {targetForm}</color>");
+
+        // 统一使用 PlayerController 的解锁逻辑，不再依赖本地的 unlockSettings 引用
+        if (!player.CheckFormUnlocked(targetForm))
         {
-            Debug.Log("EnsureUnlocked.");
-            unlockSettings.EnsureUnlocked(targetForm);
+            player.ForceUnlockForm(targetForm);
         }
 
         if (switchImmediately)
@@ -65,6 +57,18 @@ public class FrogMask : Interactable
         if (disableAfterUnlock)
         {
             DisablePickup();
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (consumed) return;
+
+        // 检测触碰的是否是玩家
+        if (other.CompareTag("Player") || other.GetComponent<PlayerController>() != null)
+        {
+            Debug.Log($"[FrogMask] 触碰检测成功，自动解锁: {targetForm}");
+            TriggerInteract();
         }
     }
 
