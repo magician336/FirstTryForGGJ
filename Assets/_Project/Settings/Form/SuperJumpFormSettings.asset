@@ -15,7 +15,7 @@ MonoBehaviour:
   moveSpeed: 5
   jumpForce: 10
   gravityMultiplier: 1
-  presentation: {fileID: 0}
+  presentation: {fileID: 11400000, guid: 48cdbd6262e8405458767dd4df4ce6cc, type: 2}
   minChargeMultiplier: 1
   maxChargeMultiplier: 2.5
   maxChargeTime: 1.5

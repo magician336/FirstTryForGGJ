@@ -15,8 +15,11 @@ MonoBehaviour:
   moveSpeed: 5
   jumpForce: 10
   gravityMultiplier: 1
-  presentation: {fileID: 0}
+  presentation: {fileID: 11400000, guid: 6512ad9d0432a4641b9b3e18def2b165, type: 2}
   swimMoveSpeed: 4
+  waterLayer:
+    serializedVersion: 2
+    m_Bits: 16
   squidInkPrefab: {fileID: 0}
   inkSpeed: 1
   inkLifetime: 2
