@@ -12,4 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74b53dadea10ea045b5743ad3c0748b7, type: 3}
   m_Name: PlayerFormUnlockSettings
   m_EditorClassIdentifier: 
-  unlockedForms: 00000000
+  unlockedForms: 000000000300000001000000
+  unlockedSkins:
+  - formType: 3
+    unlockedIndices: 0000000001000000
+  - formType: 1
+    unlockedIndices: 00000000

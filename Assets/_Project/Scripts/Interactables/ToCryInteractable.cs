@@ -1,6 +1,0 @@
-using Unity;
-
-class ToCryInteractable
-{
-
-}

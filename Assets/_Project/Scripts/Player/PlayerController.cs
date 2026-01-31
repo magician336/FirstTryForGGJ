@@ -15,6 +15,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private PlayerFormType startingForm = PlayerFormType.NormalHead;
     [SerializeField] private HealthController healthController;
 
+    [SerializeField] private WaterDetector waterDetector;
+
     // Public accessor for settings
     public PlayerSettings Settings => playerSettings;
 
@@ -57,6 +59,11 @@ public class PlayerController : MonoBehaviour
     private float nextInkFireTime;
     private int currentSkinIndex = 0;
 
+    // [新增] 溺水逻辑变量
+    private bool isDrowning = false;
+    private float drowningTimer = 0f;
+    private const float DROWNING_TIME_LIMIT = 1.0f; // 1秒后死亡
+
     void Awake()
     {
         body = GetComponent<Rigidbody2D>();
@@ -96,7 +103,15 @@ public class PlayerController : MonoBehaviour
         {
             healthController.OnDie += OnDie_Handler;
         }
+        // 获取组件（如果没有在 Inspector 赋值）
+        if (waterDetector == null) waterDetector = GetComponentInChildren<WaterDetector>();
 
+        // [新增] 订阅进出水域的事件，处理重力和状态切换
+        if (waterDetector != null)
+        {
+            waterDetector.OnWaterEnter += HandleWaterEnter;
+            waterDetector.OnWaterExit += HandleWaterExit;
+        }
         ApplySettings();
         ResetSuperJumpCharge();
         InitializeCombatStats();
@@ -114,6 +129,17 @@ public class PlayerController : MonoBehaviour
         UpdateLadderState();
         UpdateWaterState();
 
+        // [新增] 溺水核心逻辑
+        if (isDrowning)
+        {
+            HandleDrowningLogic();
+
+            // 如果正在溺水，强制不执行状态机的 Input 处理 (防止跳跃/攻击)
+            // 但允许 LogicUpdate 运行以保持动画状态 (如 Idle)
+            stateMachine?.CurrentState?.LogicUpdate();
+            return;
+        }
+
         if (stateMachine?.CurrentState == null)
         {
             return;
@@ -121,6 +147,47 @@ public class PlayerController : MonoBehaviour
 
         stateMachine.CurrentState.HandleInput();
         stateMachine.CurrentState.LogicUpdate();
+    }
+
+    // [新增] 专门处理溺水时的状态锁定和处死
+    private void HandleDrowningLogic()
+    {
+        // 1. 计时
+        drowningTimer += Time.deltaTime;
+
+        // 2. 强制锁定输入和移动 (禁止移动)
+        movementInput = 0f;
+        verticalInput = 0f;
+
+        // 3. 强制锁定物理速度 (防止惯性滑动)
+        if (body != null)
+        {
+            body.velocity = Vector2.zero;
+        }
+
+        // 4. 检查是否死亡
+        if (drowningTimer >= DROWNING_TIME_LIMIT)
+        {
+            PerformDrowningDeath();
+        }
+    }
+
+    private void PerformDrowningDeath()
+    {
+        Debug.Log("溺水时间到，玩家死亡。");
+        isDrowning = false; // 避免重复调用
+        drowningTimer = 0f;
+
+        if (healthController != null)
+        {
+            // 直接造成最大生命值的伤害以确保死亡
+            healthController.TakeDamage(9999);
+        }
+        else
+        {
+            // 如果没有血量组件，直接切换到死亡状态
+            ChangeState(deadState);
+        }
     }
 
     private void ApplySettings()
@@ -268,6 +335,11 @@ public class PlayerController : MonoBehaviour
         // Reset necessary flags
         ResetSuperJumpCharge();
 
+        // [新增] 确保复活时清除溺水标记
+        isDrowning = false;
+        drowningTimer = 0f;
+        SetGravityScale(baseGravityScale); // 恢复重力，防止复活后飘在天上
+
         // Return to Idle
         ChangeState(idleState);
         Debug.Log("Player Revived!");
@@ -347,33 +419,54 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateWaterState()
     {
+        if (waterDetector == null) return;
+
+        // 获取当前的水层级配置
         var fishSettings = FishSettings;
-        if (fishSettings == null)
+        LayerMask targetLayer = fishSettings != null ? fishSettings.WaterLayer : (LayerMask)0;
+
+        // 驱动检测逻辑
+        waterDetector.Detect(targetLayer);
+    }
+
+    private void HandleWaterEnter()
+    {
+        // 1. 如果是鱼形态：执行原有游泳逻辑
+        if (currentFormType == PlayerFormType.Fish)
         {
-            IsInWater = false;
-            return;
-        }
+            isDrowning = false;
+            SetGravityScale(0f); // 关闭重力
 
-        bool wasInWater = IsInWater;
-        IsInWater = Physics2D.OverlapCircle(transform.position, 0.5f, fishSettings.WaterLayer);
-
-        if (IsInWater)
-        {
-            // 在水中时关闭重力，防止下沉
-            SetGravityScale(0f);
-
-            // 如果刚进入水域且是鱼形态，强制切换到游泳状态
-            if (!wasInWater && CanSwim)
+            if (CanSwim)
             {
-                Debug.Log("[Player] 进入水域，切换至游泳状态");
+                Debug.Log("[Player] 鱼形态进入水域，切换至游泳状态");
                 ChangeState(swimIdleState);
             }
         }
-        else if (wasInWater)
+        // 2. 其他形态：执行溺水逻辑
+        else
         {
-            // 离开水域，恢复基础重力
-            SetGravityScale(baseGravityScale);
+            Debug.Log($"[Player] 非鱼形态 ({currentFormType}) 落水！无法移动，{DROWNING_TIME_LIMIT}秒后死亡...");
+
+            isDrowning = true;
+            drowningTimer = 0f;
+
+            // 选择 A: 悬浮在水中等死 (重力设为 0)
+            SetGravityScale(0f);
+
+            // 立即停止物理惯性
+            if (body != null) body.velocity = Vector2.zero;
         }
+    }
+
+    private void HandleWaterExit()
+    {
+        // 恢复重力
+        SetGravityScale(baseGravityScale);
+
+        // [新增] 重置溺水状态
+        isDrowning = false;
+        drowningTimer = 0f;
     }
 
     public void MoveVertical(float amount)
@@ -554,7 +647,7 @@ public class PlayerController : MonoBehaviour
     public IPlayerState SwimRunState => swimRunState;
 
     public bool IsGrounded => movementController != null && movementController.IsGrounded();
-    public bool IsInWater { get; private set; }
+    public bool IsInWater => waterDetector != null && waterDetector.IsInWater;
     public bool CanSwim => currentFormType == PlayerFormType.Fish && IsInWater && swimIdleState != null;
     public float HorizontalInput => movementInput;
     public float VerticalInput => verticalInput;
