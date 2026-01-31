@@ -12,10 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d3762af380b7394590ffb31c909e021, type: 3}
   m_Name: PlayerSettings
   m_EditorClassIdentifier: 
-  normalHeadForm: {fileID: 11400000, guid: 9dc16a32d85886b43ab7092062846cf1, type: 2}
-  fishForm: {fileID: 11400000, guid: a9ca6c455dd70054580552451b41feb8, type: 2}
-  superJumpForm: {fileID: 11400000, guid: 7c74fa08d6aa55f408c158f11aad3b88, type: 2}
-  swingForm: {fileID: 11400000, guid: 559f92765207add49a0f5ad0a23ca6c6, type: 2}
+  normalHeadSkins:
+  - {fileID: 11400000, guid: 5607f6b103d284c4b87735926a87586c, type: 2}
+  fishSkins:
+  - {fileID: 11400000, guid: a9ca6c455dd70054580552451b41feb8, type: 2}
+  superJumpSkins:
+  - {fileID: 11400000, guid: 7c74fa08d6aa55f408c158f11aad3b88, type: 2}
+  swingSkins:
+  - {fileID: 11400000, guid: 559f92765207add49a0f5ad0a23ca6c6, type: 2}
+  - {fileID: 11400000, guid: 559f92765207add49a0f5ad0a23ca6c6, type: 2}
   inputSettings: {fileID: 11400000, guid: 4c0f14c62da7de7489d9de44e298160d, type: 2}
   ladderSettings:
     climbSpeed: 3
@@ -23,6 +28,6 @@ MonoBehaviour:
     ladderLayer:
       serializedVersion: 2
       m_Bits: 2048
-  interactionSettings: {fileID: 0}
-  combatSettings: {fileID: 0}
-  formUnlockSettings: {fileID: 0}
+  interactionSettings: {fileID: 11400000, guid: 56c881e48ed5c134c9dfdef59138f0c1, type: 2}
+  combatSettings: {fileID: 11400000, guid: e17c925d0869a014c975ac0b46b14dde, type: 2}
+  formUnlockSettings: {fileID: 11400000, guid: 8dea86117e1eaae449905062a248b890, type: 2}

@@ -15,10 +15,10 @@ MonoBehaviour:
   moveSpeed: 5
   jumpForce: 10
   gravityMultiplier: 1
-  presentation: {fileID: 0}
+  presentation: {fileID: 11400000, guid: 0e3ce86c072fd8c4095773612ddc6c99, type: 2}
   maxWebDistance: 10
   climbSpeed: 3
   swingForce: 15
   grappleLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 512

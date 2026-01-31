@@ -15,4 +15,4 @@ MonoBehaviour:
   moveSpeed: 5
   jumpForce: 10
   gravityMultiplier: 1
-  presentation: {fileID: 0}
+  presentation: {fileID: 11400000, guid: 7eefe7c80629e674ab34f8474e56e272, type: 2}
