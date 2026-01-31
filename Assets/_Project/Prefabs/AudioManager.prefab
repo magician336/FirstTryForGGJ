@@ -55,9 +55,29 @@ MonoBehaviour:
   sfxBank:
   - key: Die
     clip: {fileID: 8300000, guid: 2df221048d3b41340accc4052670b630, type: 3}
-  - key: Die
+  - key: 2Die
     clip: {fileID: 8300000, guid: f9599b0dbee0c254e8ee30d0bf5801e7, type: 3}
   - key: rebirth
-    clip: {fileID: 8300000, guid: 25901e5ed1ab9b0429b334411151b11a, type: 3}
+    clip: {fileID: 8300000, guid: b0798cf296112d5439473aa3ef74a5b3, type: 3}
   - key: chuansong
     clip: {fileID: 8300000, guid: 25901e5ed1ab9b0429b334411151b11a, type: 3}
+  - key: swimm
+    clip: {fileID: 8300000, guid: cc1c84cf89f4dad4dbfb2e794f279add, type: 3}
+  - key: spidermenchuchang
+    clip: {fileID: 8300000, guid: 99bdf8f173b66bb4e9e08f28e3c4318e, type: 3}
+  - key: spidertusi
+    clip: {fileID: 8300000, guid: 96527786bc894b1468b22f900dd7e636, type: 3}
+  - key: jump
+    clip: {fileID: 8300000, guid: b32fbafaed1726f458fbea0da7c269e6, type: 3}
+  - key: keyboard
+    clip: {fileID: 8300000, guid: 6ca1900a07c00044dab2c7e97ef345e8, type: 3}
+  - key: knife
+    clip: {fileID: 8300000, guid: a0f2b91c31ffad74baee4b9a8ba61157, type: 3}
+  - key: headoff
+    clip: {fileID: 8300000, guid: ccdb9fa6a4fc45c499462e8ae340b657, type: 3}
+  - key: open
+    clip: {fileID: 8300000, guid: 5e7bc31c2cd6f6e46ad2d246d4720294, type: 3}
+  - key: maskshift
+    clip: {fileID: 8300000, guid: 423bfe9c629ad5244a875c1287a40773, type: 3}
+  - key: pickup
+    clip: {fileID: 8300000, guid: a4317822679b07840a7a29e6a3db2971, type: 3}
