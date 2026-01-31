@@ -13,7 +13,7 @@ public class InputSettings : ScriptableObject
     [SerializeField] private KeyCode interactKey = KeyCode.F;
     [SerializeField] private KeyCode nextFormKey = KeyCode.E;
     [SerializeField] private KeyCode previousFormKey = KeyCode.Q;
-    [SerializeField] private KeyCode fireKey = KeyCode.Mouse0;
+    [SerializeField] private KeyCode fireKey = KeyCode.K;
     [SerializeField] private KeyCode dashKey = KeyCode.LeftShift;
     [SerializeField] private KeyCode swingKey = KeyCode.J;
 

@@ -5,12 +5,12 @@ public class BossController : MonoBehaviour
 {
     [Header("设置")]
     public BossSettings settings;
-    
+
     [Header("组件引用")]
     [SerializeField] private BossFist fist;
 
     public BossStateMachine StateMachine { get; private set; }
-    
+
     public Rigidbody2D Rb { get; private set; }
     public HealthController Health { get; private set; }
     public Transform PlayerTransform => GameManager.Instance.Player.transform;
