@@ -16,6 +16,6 @@ MonoBehaviour:
   prefabOverride: {fileID: 0}
   prefabOffset: {x: 0, y: 0, z: 0}
   animatorOverride: {fileID: 0}
-  switchSfxKey: 
+  switchSfxKey: faerkong
   switchVfxPrefab: {fileID: 0}
   vfxOffset: {x: 0, y: 0, z: 0}
