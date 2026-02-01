@@ -117,9 +117,14 @@ public class PlayerController : MonoBehaviour
         InitializeCombatStats();
 
         stateMachine = new PlayerStateMachine();
-        InitializeFormSystem();
+        // InitializeFormSystem(); // Moved to Start to prevent initialization order issues
 
         Debug.Log($"[PlayerController] Jump: {GetJumpKey()}, Interact: {GetInteractKey()}, Next: {GetNextFormKey()}, Prev: {GetPreviousFormKey()}");
+    }
+
+    private void Start()
+    {
+        InitializeFormSystem();
     }
 
     void Update()
