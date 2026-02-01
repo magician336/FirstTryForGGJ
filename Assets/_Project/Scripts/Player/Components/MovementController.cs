@@ -17,6 +17,9 @@ public class MovementController : MonoBehaviour
 
     public void Move(float horizontalInput)
     {
+        if (rb == null) rb = GetComponent<Rigidbody2D>();
+        if (rb == null) return;
+
         rb.velocity = new Vector2(horizontalInput * moveSpeed, rb.velocity.y);
     }
 
