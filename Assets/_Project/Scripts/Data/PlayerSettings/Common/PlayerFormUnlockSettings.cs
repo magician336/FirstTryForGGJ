@@ -16,6 +16,22 @@ public class PlayerFormUnlockSettings : ScriptableObject
 
     public IReadOnlyList<PlayerFormType> UnlockedForms => unlockedForms;
 
+    public void ResetToDefaults()
+    {
+        unlockedForms.Clear();
+        unlockedForms.Add(PlayerFormType.NormalHead);
+        
+        unlockedSkins.Clear();
+        unlockedSkins.Add(new FormSkinUnlockData 
+        { 
+            formType = PlayerFormType.NormalHead, 
+            unlockedIndices = new List<int> { 0 } 
+        });
+
+        Debug.Log("[PlayerFormUnlockSettings] 重置解锁状态：仅保留 NormalHead 皮肤索引 0");
+        MarkDirty();
+    }
+
     public bool IsFormUnlocked(PlayerFormType formType)
     {
         if (unlockedForms == null)

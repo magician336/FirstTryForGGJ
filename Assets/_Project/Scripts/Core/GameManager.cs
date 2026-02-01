@@ -14,6 +14,7 @@ public class GameManager : MonoBehaviour
 
     [Header("玩家生成")]
     [SerializeField] private PlayerController playerPrefab;
+    [SerializeField] private PlayerFormUnlockSettings unlockSettings;
     [SerializeField] private string playerSpawnTag = "PlayerSpawn";
     [SerializeField] private bool autoSpawnPlayer = true;
 
@@ -47,6 +48,11 @@ public class GameManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        if (unlockSettings != null)
+        {
+            unlockSettings.ResetToDefaults();
+        }
     }
 
     private void OnEnable()
