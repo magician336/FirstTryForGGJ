@@ -9,10 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 74b53dadea10ea045b5743ad3c0748b7, type: 3}
-  m_Name: PlayerFormUnlockSettings
+  m_Script: {fileID: 11500000, guid: 31a3811f5d201504c91f037cdf86e4f8, type: 3}
+  m_Name: hackmask
   m_EditorClassIdentifier: 
-  unlockedForms: 00000000
-  unlockedSkins:
-  - formType: 0
-    unlockedIndices: 00000000
+  moveSpeed: 5
+  jumpForce: 10
+  gravityMultiplier: 1
+  presentation: {fileID: 11400000, guid: c6b1860ae626b774ab6dc069b18327a7, type: 2}

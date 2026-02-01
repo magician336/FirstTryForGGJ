@@ -129,6 +129,7 @@ public class PlayerController : MonoBehaviour
         UpdateLadderState();
         UpdateWaterState();
 
+
         // [新增] 溺水核心逻辑
         if (isDrowning)
         {
