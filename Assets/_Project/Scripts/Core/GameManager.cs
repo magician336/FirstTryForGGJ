@@ -49,10 +49,7 @@ public class GameManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        if (unlockSettings != null)
-        {
-            unlockSettings.ResetToDefaults();
-        }
+
     }
 
     private void OnEnable()
@@ -80,6 +77,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+
         StartGame();
     }
 
@@ -89,6 +87,15 @@ public class GameManager : MonoBehaviour
         if (autoSpawnPlayer)
         {
             SpawnOrFindPlayer();
+        }
+
+    }
+
+    public void PlayerSettingsReset()
+    {
+        if (unlockSettings != null)
+        {
+            unlockSettings.ResetToDefaults();
         }
     }
 

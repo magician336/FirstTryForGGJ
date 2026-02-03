@@ -15,11 +15,11 @@ MonoBehaviour:
   normalHeadSkins:
   - {fileID: 11400000, guid: 5607f6b103d284c4b87735926a87586c, type: 2}
   - {fileID: 11400000, guid: f6ccfa396a922394ab72b3710784201c, type: 2}
-  - {fileID: 11400000, guid: cf24d07116ea2d547a1f312ca655d63d, type: 2}
   - {fileID: 11400000, guid: 2fe634a35436d5c4383c5feba60e2c18, type: 2}
   fishSkins:
-  - {fileID: 11400000, guid: a9ca6c455dd70054580552451b41feb8, type: 2}
+  - {fileID: 11400000, guid: c96b639702d9684458350a3af8d0e570, type: 2}
   - {fileID: 11400000, guid: 5bf10b6c8cea16341851c36dad3110a5, type: 2}
+  - {fileID: 11400000, guid: 53824948c9217384e9ee88a1c04157ba, type: 2}
   superJumpSkins:
   - {fileID: 11400000, guid: 7c74fa08d6aa55f408c158f11aad3b88, type: 2}
   - {fileID: 11400000, guid: 78ccf2bf16306674085f74ea55e60d30, type: 2}

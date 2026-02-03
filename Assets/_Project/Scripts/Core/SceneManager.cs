@@ -14,6 +14,9 @@ public class SceneManager : MonoBehaviour
     [Header("Options")]
     [SerializeField] private bool keepAcrossScenes = true;
 
+    [Header("GameManager")]
+    [SerializeField] private GameManager gameManager;
+
     public event Action<string> SceneLoadStarted;
     public event Action<string> SceneLoaded;
 
@@ -64,6 +67,8 @@ public class SceneManager : MonoBehaviour
             Debug.LogWarning("Scene name is empty. LoadScene aborted.");
             return;
         }
+
+        gameManager.PlayerSettingsReset();
 
         SceneLoadStarted?.Invoke(sceneName);
         UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
